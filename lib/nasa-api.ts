@@ -361,16 +361,26 @@ export function calculateNDVI(latitude: number, longitude: number, plantingDate:
   const now = new Date()
   const daysSincePlanting = Math.floor((now.getTime() - planted.getTime()) / (1000 * 60 * 60 * 24))
 
-  // NDVI typically follows a growth curve
-  if (daysSincePlanting < 0) return 0.1
-  if (daysSincePlanting < 20) return 0.15 + daysSincePlanting * 0.015
-  if (daysSincePlanting < 60) return 0.45 + (daysSincePlanting - 20) * 0.01
-  if (daysSincePlanting < 100) return 0.85 - (daysSincePlanting - 60) * 0.002
-  return 0.77 - (daysSincePlanting - 100) * 0.003
+  // Add location-based variation factor
+  const locationFactor = Math.sin(latitude * 0.1) * 0.05
 
-  // Add some variation based on location
-  const locationFactor = Math.sin(latitude) * 0.1
-  return Math.min(0.95, Math.max(0.1, 0.7 + locationFactor + (Math.random() - 0.5) * 0.1))
+  // NDVI typically follows a growth curve
+  let baseNDVI = 0.1
+
+  if (daysSincePlanting < 0) {
+    baseNDVI = 0.1
+  } else if (daysSincePlanting < 20) {
+    baseNDVI = 0.15 + daysSincePlanting * 0.015
+  } else if (daysSincePlanting < 60) {
+    baseNDVI = 0.45 + (daysSincePlanting - 20) * 0.01
+  } else if (daysSincePlanting < 100) {
+    baseNDVI = 0.85 - (daysSincePlanting - 60) * 0.002
+  } else {
+    baseNDVI = 0.77 - (daysSincePlanting - 100) * 0.003
+  }
+
+  // Apply location factor and constraints
+  return Math.min(0.95, Math.max(0.1, baseNDVI + locationFactor))
 }
 
 export function analyzeCropHealth(ndvi: number): CropHealthAnalysis {
@@ -432,7 +442,16 @@ export async function getIrrigationStatus(
   }
 
   const dailyNeed = cropWaterNeeds[cropType] || 5.0
-  const soilMoisture = 40 + Math.random() * 40 // Simulated soil moisture 40-80%
+
+  // Calculate estimated soil moisture based on recent precipitation and ET
+  // This is still an estimation since NASA POWER doesn't provide soil moisture directly
+  // Formula: Start at field capacity (70%), subtract ET, add precipitation
+  const daysHistory = 7
+  const baselineMoisture = 70 // Field capacity assumption
+  const moistureDepletion = weather.evapotranspiration * daysHistory
+  const moistureAddition = weather.precipitation * daysHistory
+  const soilMoisture = Math.max(20, Math.min(100, baselineMoisture - moistureDepletion + moistureAddition))
+
   const waterDeficit = dailyNeed - weather.precipitation - soilMoisture * 0.05
 
   return {
@@ -444,13 +463,14 @@ export async function getIrrigationStatus(
   }
 }
 
-export function calculatePhenology(cropType: string, plantingDate: string): PhenologyData {
+export async function calculatePhenology(cropType: string, plantingDate: string, latitude: number, longitude: number): Promise<PhenologyData> {
   const planted = new Date(plantingDate)
   const now = new Date()
   const daysSincePlanting = Math.floor((now.getTime() - planted.getTime()) / (1000 * 60 * 60 * 24))
 
-  // Growing Degree Days (simplified calculation)
-  const avgTemp = 20 // Assume average temp
+  // Get actual temperature from NASA API for accurate GDD calculation
+  const weather = await getWeatherData(latitude, longitude)
+  const avgTemp = weather.temperature
   const baseTemp = 10 // Base temperature for most crops
   const gdd = daysSincePlanting * Math.max(0, avgTemp - baseTemp)
 

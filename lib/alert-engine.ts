@@ -84,13 +84,13 @@ function checkCropActivityAlerts(crop: Crop & { farms: Farm }): AlertTrigger[] {
     let nextStage = ""
     let daysToNextStage = 0
 
-    for (let i = 0; i < guide.growthStages.length; i++) {
-      totalDays += guide.growthStages[i].durationDays
+    for (let i = 0; i < guide.growthDuration.stages.length; i++) {
+      totalDays += guide.growthDuration.stages[i].durationDays
       if (daysSincePlanting < totalDays) {
-        currentStage = guide.growthStages[i].name
+        currentStage = guide.growthDuration.stages[i].name
         daysToNextStage = totalDays - daysSincePlanting
-        if (i + 1 < guide.growthStages.length) {
-          nextStage = guide.growthStages[i + 1].name
+        if (i + 1 < guide.growthDuration.stages.length) {
+          nextStage = guide.growthDuration.stages[i + 1].name
         }
         break
       }

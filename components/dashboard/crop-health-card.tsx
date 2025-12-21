@@ -56,6 +56,9 @@ export function CropHealthCard({ analysis, cropName }: CropHealthCardProps) {
               <span className="font-medium text-foreground">{analysis.ndvi.toFixed(2)}</span>
             </div>
             <Progress value={analysis.ndvi * 100} className={`h-2 ${getProgressColor(analysis.ndvi)}`} />
+            <p className="mt-2 text-xs text-amber-600">
+              Note: NDVI values are estimated based on growth stage. For actual satellite imagery, consider using dedicated NDVI services.
+            </p>
           </div>
 
           <div>

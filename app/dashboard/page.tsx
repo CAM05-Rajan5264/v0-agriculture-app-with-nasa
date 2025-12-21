@@ -48,7 +48,7 @@ export default async function DashboardPage() {
       const ndvi = calculateNDVI(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.planting_date)
       cropHealth = analyzeCropHealth(ndvi)
       irrigation = await getIrrigationStatus(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.name)
-      phenology = calculatePhenology(primaryCrop.name, primaryCrop.planting_date)
+      phenology = await calculatePhenology(primaryCrop.name, primaryCrop.planting_date, primaryFarm.latitude, primaryFarm.longitude)
     }
   }
 

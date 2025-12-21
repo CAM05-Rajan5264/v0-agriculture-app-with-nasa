@@ -26,11 +26,13 @@ export default async function PhenologyPage() {
   const weather = defaultFarm ? await getWeatherData(defaultFarm.latitude, defaultFarm.longitude) : null
   const latitude = defaultFarm?.latitude ?? 40 // Default to northern hemisphere
 
-  const phenologyData = (crops || []).map((crop) => ({
-    crop,
-    phenology: calculatePhenology(crop.name, crop.planting_date),
-    guide: getCropGuide(crop.name),
-  }))
+  const phenologyData = await Promise.all(
+    (crops || []).map(async (crop) => ({
+      crop,
+      phenology: await calculatePhenology(crop.name, crop.planting_date, crop.farms.latitude, crop.farms.longitude),
+      guide: getCropGuide(crop.name),
+    }))
+  )
 
   return (
     <div className="flex flex-col">

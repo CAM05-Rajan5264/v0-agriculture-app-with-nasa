@@ -65,6 +65,10 @@ export function IrrigationCard({ irrigation, farmName }: IrrigationCardProps) {
               </p>
             </div>
           )}
+
+          <p className="text-xs text-muted-foreground italic">
+            Soil moisture is estimated from NASA weather data. For precise measurements, use field sensors.
+          </p>
         </div>
       </CardContent>
     </Card>
