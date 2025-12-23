@@ -108,3 +108,42 @@ export interface NextIrrigationPrediction {
   }
   recommendation: string
 }
+
+export interface SatelliteNDVI {
+  date: string
+  ndvi: number
+  quality: "excellent" | "good" | "fair" | "poor"
+  cloudCover: number
+  source: "MODIS" | "Landsat" | "Sentinel"
+}
+
+export interface SoilMoistureData {
+  date: string
+  surfaceSoilMoisture: number
+  rootZoneSoilMoisture: number
+  quality: "high" | "medium" | "low"
+}
+
+export interface NaturalEvent {
+  id: string
+  title: string
+  description: string
+  category: "wildfires" | "floods" | "storms" | "drought" | "earthquakes" | "volcanoes" | "other"
+  date: string
+  latitude: number
+  longitude: number
+  distanceKm: number
+  severity: "low" | "medium" | "high" | "critical"
+  status: "active" | "closed"
+  link?: string
+}
+
+export interface SatelliteImageLayer {
+  id: string
+  name: string
+  description: string
+  date: string
+  layer: string
+  resolution: string
+  tileUrl: string
+}
