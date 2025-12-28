@@ -279,9 +279,9 @@ To use real satellite data, you would need to:
 
 ### NASA Earthdata Login
 Real MODIS and SMAP data requires authentication:
-```
+\`\`\`
 https://urs.earthdata.nasa.gov/
-```
+\`\`\`
 
 ### API Endpoints
 - CMR API: https://cmr.earthdata.nasa.gov/
