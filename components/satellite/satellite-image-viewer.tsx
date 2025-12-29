@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
+import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,14 +16,17 @@ interface SatelliteImageViewerProps {
 
 export function SatelliteImageViewer({ latitude, longitude, farmName, layers }: SatelliteImageViewerProps) {
   const [selectedLayer, setSelectedLayer] = useState<string>(layers[0]?.id || "")
+  const [worldviewUrl, setWorldviewUrl] = useState<string>("")
   const currentLayer = layers.find((l) => l.id === selectedLayer) || layers[0]
 
-  const zoom = 8
-
-  const openInWorldview = () => {
-    const url = `https://worldview.earthdata.nasa.gov/?v=${longitude - 5},${latitude - 5},${longitude + 5},${latitude + 5}&l=${currentLayer?.layer || 'MODIS_Terra_CorrectedReflectance_TrueColor'}`
-    window.open(url, '_blank')
-  }
+  useEffect(() => {
+    if (currentLayer) {
+      const bbox = `${longitude - 5},${latitude - 5},${longitude + 5},${latitude + 5}`
+      const layerId = currentLayer.layer || 'MODIS_Terra_CorrectedReflectance_TrueColor'
+      const url = `https://worldview.earthdata.nasa.gov/?v=${bbox}&l=${layerId}&t=${new Date().toISOString().split('T')[0]}`
+      setWorldviewUrl(url)
+    }
+  }, [selectedLayer, currentLayer, latitude, longitude])
 
   const openInGoogleEarth = () => {
     const url = `https://earth.google.com/web/@${latitude},${longitude},0a,50000d,35y,0h,0t,0r`
@@ -54,12 +56,16 @@ export function SatelliteImageViewer({ latitude, longitude, farmName, layers }: 
 
       <div className="relative overflow-hidden rounded-lg border border-border bg-muted">
         <div className="aspect-video w-full bg-gradient-to-br from-slate-900 to-slate-800">
-          <iframe
-            src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.1},${latitude - 0.1},${longitude + 0.1},${latitude + 0.1}&layer=mapnik&marker=${latitude},${longitude}`}
-            className="h-full w-full"
-            title={`Map of ${farmName}`}
-            style={{ border: 0 }}
-          />
+          {worldviewUrl && (
+            <iframe
+              key={worldviewUrl}
+              src={worldviewUrl}
+              className="h-full w-full"
+              title={`NASA Worldview - ${currentLayer?.name || 'Satellite'} - ${farmName}`}
+              style={{ border: 0 }}
+              allowFullScreen
+            />
+          )}
           <div className="absolute top-3 left-3">
             <Badge className="bg-black/70 text-white backdrop-blur-sm">
               {farmName} ({latitude.toFixed(4)}, {longitude.toFixed(4)})
@@ -68,7 +74,7 @@ export function SatelliteImageViewer({ latitude, longitude, farmName, layers }: 
           <div className="absolute bottom-3 right-3">
             <Badge className="bg-black/70 text-white backdrop-blur-sm">
               <MapPin className="mr-1 h-3 w-3" />
-              Farm Location
+              {currentLayer?.name || 'Satellite View'}
             </Badge>
           </div>
         </div>
@@ -78,10 +84,10 @@ export function SatelliteImageViewer({ latitude, longitude, farmName, layers }: 
         <Button
           variant="outline"
           className="w-full"
-          onClick={openInWorldview}
+          onClick={() => worldviewUrl && window.open(worldviewUrl, '_blank')}
         >
           <ExternalLink className="mr-2 h-4 w-4" />
-          Open in NASA Worldview
+          Open Full Screen
         </Button>
         <Button
           variant="outline"
@@ -97,15 +103,15 @@ export function SatelliteImageViewer({ latitude, longitude, farmName, layers }: 
         <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <strong>{currentLayer.name}:</strong> {currentLayer.description}. Click the buttons above to view detailed satellite imagery from NASA Worldview or explore the area in Google Earth with high-resolution satellite views.
+            <strong>{currentLayer.name}:</strong> {currentLayer.description}. Select different layers above to view various satellite data. Open in full screen for interactive NASA Worldview controls.
           </div>
         </div>
       )}
 
       <div className="rounded-lg border border-border bg-card p-4">
-        <h4 className="mb-2 font-medium text-foreground">About Satellite Data Access</h4>
+        <h4 className="mb-2 font-medium text-foreground">About Satellite Data</h4>
         <p className="text-sm text-muted-foreground">
-          Full resolution NASA satellite imagery requires authentication through NASA Earthdata. The map above shows your farm location. For detailed satellite analysis including MODIS, VIIRS, Landsat, and Sentinel data, use the NASA Worldview link to access the complete Global Imagery Browse Services (GIBS) with interactive controls for dates, layers, and comparisons.
+          Displaying NASA Worldview satellite imagery for {farmName}. You can select different satellite layers (MODIS, VIIRS, Landsat, Sentinel) to analyze vegetation health, thermal data, and environmental conditions. Change the layer to see different satellite perspectives of your farm.
         </p>
       </div>
     </div>
