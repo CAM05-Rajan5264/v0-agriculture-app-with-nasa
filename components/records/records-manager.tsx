@@ -3,9 +3,8 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Droplets, Bug, Leaf, Pill, DollarSign, Wrench, Plus, Calendar } from "lucide-react"
+import { Droplets, Bug, Leaf, DollarSign, Wrench, Calendar, Speaker as Sprayer, AirVent as Harvest } from "lucide-react"
 import { AddIrrigationDialog } from "./add-irrigation-dialog"
 import { AddPesticideDialog } from "./add-pesticide-dialog"
 import { AddFertilizerDialog } from "./add-fertilizer-dialog"
@@ -23,7 +22,7 @@ export function RecordsManager() {
     { id: "irrigation", label: "Irrigation", icon: Droplets },
     { id: "pesticide", label: "Pesticides", icon: Bug },
     { id: "fertilizer", label: "Fertilizers", icon: Leaf },
-    { id: "harvest", label: "Harvest", icon: Pill },
+    { id: "harvest", label: "Harvest", icon: Harvest },
     { id: "cost", label: "Costs", icon: DollarSign },
     { id: "maintenance", label: "Maintenance", icon: Wrench },
   ]
@@ -52,37 +51,37 @@ export function RecordsManager() {
             </div>
             <div className="flex flex-wrap gap-2">
               <AddIrrigationDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <Droplets className="h-4 w-4" />
                   <span className="hidden sm:inline">Irrigation</span>
                 </Button>
               </AddIrrigationDialog>
               <AddPesticideDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <Sprayer className="h-4 w-4" />
                   <span className="hidden sm:inline">Pesticide</span>
                 </Button>
               </AddPesticideDialog>
               <AddFertilizerDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <Leaf className="h-4 w-4" />
                   <span className="hidden sm:inline">Fertilizer</span>
                 </Button>
               </AddFertilizerDialog>
               <AddHarvestDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <Harvest className="h-4 w-4" />
                   <span className="hidden sm:inline">Harvest</span>
                 </Button>
               </AddHarvestDialog>
               <AddCostDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <DollarSign className="h-4 w-4" />
                   <span className="hidden sm:inline">Cost</span>
                 </Button>
               </AddCostDialog>
               <AddMaintenanceDialog onSuccess={handleRecordAdded}>
-                <Button size="sm" variant="outline" className="gap-2">
+                <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                   <Wrench className="h-4 w-4" />
                   <span className="hidden sm:inline">Maintenance</span>
                 </Button>

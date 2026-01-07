@@ -37,7 +37,7 @@ export function RecordsList({ recordType, refreshKey }: RecordsListProps) {
       if (error) throw error
       setRecords(data || [])
     } catch (error) {
-      console.error("Error loading records:", error)
+      console.error("[v0] Error loading records:", error)
     } finally {
       setLoading(false)
     }
@@ -50,7 +50,7 @@ export function RecordsList({ recordType, refreshKey }: RecordsListProps) {
       if (error) throw error
       setRecords(records.filter((r) => r.id !== id))
     } catch (error) {
-      console.error("Error deleting record:", error)
+      console.error("[v0] Error deleting record:", error)
     }
   }
 
