@@ -21,8 +21,6 @@ import {
   Code,
   Menu,
   Satellite,
-  Microscope,
-  FileText,
 } from "lucide-react"
 
 const navigation = [
@@ -33,8 +31,6 @@ const navigation = [
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Satellite", href: "/dashboard/satellite", icon: Satellite },
-  { name: "Plant Diagnosis", href: "/dashboard/diagnosis", icon: Microscope },
-  { name: "Farm Records", href: "/dashboard/records", icon: FileText },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
 ]
