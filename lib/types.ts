@@ -147,3 +147,61 @@ export interface SatelliteImageLayer {
   resolution: string
   tileUrl: string
 }
+
+export interface FarmingActivity {
+  id: string
+  user_id: string
+  crop_id: string
+  farm_id: string
+  activity_type: "pesticide" | "fertilizer" | "harvest" | "maintenance"
+  title: string
+  description: string | null
+  activity_date: string
+  notes: string | null
+
+  // Pesticide specific
+  product_name: string | null
+  quantity_applied: number | null
+  unit_of_measurement: string | null
+  disease_treated: string | null
+  effectiveness_rating: number | null
+
+  // Fertilizer specific
+  fertilizer_type: string | null
+  nitrogen_amount: number | null
+  phosphorus_amount: number | null
+  potassium_amount: number | null
+
+  // Harvest specific
+  quantity_harvested: number | null
+  harvest_unit: string | null
+  quality_grade: string | null
+  market_price_per_unit: number | null
+
+  // Maintenance specific
+  equipment_name: string | null
+  maintenance_type: string | null
+  cost: number | null
+  service_provider: string | null
+  next_maintenance_date: string | null
+
+  created_at: string
+  updated_at: string
+}
+
+export interface DiseaseDetection {
+  id: string
+  user_id: string
+  crop_id: string | null
+  farm_id: string | null
+  image_url: string
+  analysis_date: string
+  detected_disease: string | null
+  confidence_score: number | null
+  severity: "mild" | "moderate" | "severe" | "critical" | null
+  symptoms: string[] | null
+  recommended_treatment: string | null
+  treatment_urgency: "low" | "medium" | "high" | "critical" | null
+  raw_analysis: string | null
+  created_at: string
+}
