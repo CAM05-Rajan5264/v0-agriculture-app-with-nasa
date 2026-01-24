@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Leaf, Upload, Loader, CheckCircle } from "lucide-react"
 import Image from "next/image"
-import { analyzeImagePixels, detectPlantDisease } from "@/lib/plant-disease-analyzer"
 
 export default function DiseaseDetectionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -27,8 +25,8 @@ export default function DiseaseDetectionPage() {
         return
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image must be less than 5MB")
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Image must be less than 10MB")
         return
       }
 
@@ -44,7 +42,7 @@ export default function DiseaseDetectionPage() {
   }
 
   const handleAnalyze = async () => {
-    if (!selectedImage || !preview || !canvasRef.current) {
+    if (!selectedImage) {
       setError("Please select an image first")
       return
     }
@@ -53,50 +51,49 @@ export default function DiseaseDetectionPage() {
     setError(null)
 
     try {
-      const img = new window.Image()
-      img.crossOrigin = "anonymous"
-      img.onload = async () => {
-        const canvas = canvasRef.current
-        if (!canvas) return
+      const formData = new FormData()
+      formData.append("file", selectedImage)
 
-        const ctx = canvas.getContext("2d")
-        if (!ctx) return
+      const response = await fetch("/api/disease-detection", {
+        method: "POST",
+        body: formData,
+      })
 
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-
-        // Analyze image pixels
-        const metrics = analyzeImagePixels(canvas)
-
-        // Detect disease based on analysis
-        const result = detectPlantDisease(metrics)
-
-        setAnalysis(result)
-
-        // Save to database
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (user) {
-          await supabase.from("disease_detections").insert({
-            user_id: user.id,
-            image_url: preview,
-            detected_disease: result.disease,
-            confidence_score: result.confidence,
-            severity: result.severity,
-            symptoms: result.symptoms,
-            recommended_treatment: result.treatment,
-            treatment_urgency: result.urgency,
-            raw_analysis: JSON.stringify(result),
-          })
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to analyze image")
       }
-      img.src = preview
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || "Analysis failed")
+      }
+
+      setAnalysis(result)
+
+      // Save to database
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        await supabase.from("disease_detections").insert({
+          user_id: user.id,
+          image_url: preview,
+          detected_disease: result.disease,
+          confidence_score: result.confidence,
+          severity: result.severity,
+          symptoms: result.symptoms,
+          recommended_treatment: result.treatment,
+          treatment_urgency: result.urgency,
+          raw_analysis: JSON.stringify(result),
+        })
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred during analysis")
+      const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis"
+      setError(errorMessage)
       console.error("[v0] Disease detection error:", err)
     } finally {
       setLoading(false)
@@ -113,6 +110,8 @@ export default function DiseaseDetectionPage() {
         return "text-red-600 bg-red-50"
       case "critical":
         return "text-red-700 bg-red-50"
+      case "none":
+        return "text-green-600 bg-green-50"
       default:
         return "text-gray-600 bg-gray-50"
     }
@@ -145,7 +144,7 @@ export default function DiseaseDetectionPage() {
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
               <Leaf className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="font-medium">Click to upload or drag and drop</p>
-              <p className="text-sm text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
+              <p className="text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
             </div>
 
             {preview && (
@@ -173,7 +172,7 @@ export default function DiseaseDetectionPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {analysis.disease.includes("Healthy") ? (
+                {analysis.disease.includes("healthy") ? (
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 ) : (
                   <AlertCircle className="h-5 w-5" />
@@ -187,7 +186,7 @@ export default function DiseaseDetectionPage() {
                 <p className="text-lg font-semibold">{analysis.disease}</p>
               </div>
 
-              {!analysis.disease.includes("Healthy") && (
+              {!analysis.disease.includes("healthy") && (
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Confidence</span>
@@ -238,9 +237,6 @@ export default function DiseaseDetectionPage() {
           </Card>
         )}
       </div>
-
-      {/* Hidden canvas for image analysis */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
