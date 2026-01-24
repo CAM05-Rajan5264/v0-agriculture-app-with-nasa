@@ -160,35 +160,113 @@ export default async function SatellitePage() {
                   </CardContent>
                 </Card>
 
-                {farms && farms.length > 1 && (
+                {farms && farms.length > 0 && (
                   <Card className="border-border bg-card">
                     <CardHeader>
-                      <CardTitle>All Farms Satellite Data</CardTitle>
+                      <CardTitle>All Farms Satellite Analysis</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-2">Comprehensive satellite monitoring for your {farms.length} farm{farms.length > 1 ? "s" : ""}</p>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="space-y-4">
                         {farms.map((farm) => {
                           const farmData = farmsSatelliteData[farm.id]
                           const latestNDVI = farmData?.ndvi?.[farmData.ndvi.length - 1]
                           const latestMoisture = farmData?.moisture?.[farmData.moisture.length - 1]
 
+                          // Determine crop health based on NDVI
+                          let healthStatus = "Unknown"
+                          let healthColor = "text-gray-600"
+                          if (latestNDVI) {
+                            const ndviValue = latestNDVI.ndvi
+                            if (ndviValue > 0.6) {
+                              healthStatus = "Excellent"
+                              healthColor = "text-green-600"
+                            } else if (ndviValue > 0.4) {
+                              healthStatus = "Good"
+                              healthColor = "text-emerald-600"
+                            } else if (ndviValue > 0.2) {
+                              healthStatus = "Fair"
+                              healthColor = "text-yellow-600"
+                            } else {
+                              healthStatus = "Poor"
+                              healthColor = "text-red-600"
+                            }
+                          }
+
+                          // Determine moisture status
+                          let moistureStatus = "Normal"
+                          let moistureColor = "text-blue-600"
+                          if (latestMoisture) {
+                            const moisture = latestMoisture.surfaceSoilMoisture
+                            if (moisture < 20) {
+                              moistureStatus = "Dry"
+                              moistureColor = "text-orange-600"
+                            } else if (moisture < 30) {
+                              moistureStatus = "Low"
+                              moistureColor = "text-yellow-600"
+                            } else if (moisture > 60) {
+                              moistureStatus = "High"
+                              moistureColor = "text-blue-600"
+                            }
+                          }
+
                           return (
-                            <div key={farm.id} className="rounded-lg border border-border p-4">
-                              <h4 className="font-medium text-foreground">{farm.name}</h4>
-                              <p className="text-sm text-muted-foreground">{farm.location}</p>
-                              <div className="mt-3 space-y-2">
+                            <div key={farm.id} className="rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h4 className="font-semibold text-foreground">{farm.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{farm.location}</p>
+                                </div>
+                                <div className="text-right">
+                                  <div className={`text-sm font-semibold ${healthColor}`}>
+                                    {healthStatus} Health
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 grid gap-4 md:grid-cols-3">
                                 {latestNDVI && (
-                                  <div className="text-sm">
-                                    <span className="text-muted-foreground">NDVI: </span>
-                                    <span className="font-medium">{latestNDVI.ndvi.toFixed(3)}</span>
+                                  <div className="rounded bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">Vegetation Index (NDVI)</p>
+                                    <p className="text-lg font-semibold text-foreground">{latestNDVI.ndvi.toFixed(3)}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {latestNDVI.date ? new Date(latestNDVI.date).toLocaleDateString() : "Latest data"}
+                                    </p>
                                   </div>
                                 )}
                                 {latestMoisture && (
-                                  <div className="text-sm">
-                                    <span className="text-muted-foreground">Soil Moisture: </span>
-                                    <span className="font-medium">{latestMoisture.surfaceSoilMoisture.toFixed(1)}%</span>
+                                  <div className="rounded bg-muted p-3">
+                                    <p className="text-xs text-muted-foreground mb-1">Soil Moisture</p>
+                                    <p className={`text-lg font-semibold ${moistureColor}`}>
+                                      {latestMoisture.surfaceSoilMoisture.toFixed(1)}%
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">{moistureStatus}</p>
                                   </div>
                                 )}
+                                <div className="rounded bg-muted p-3">
+                                  <p className="text-xs text-muted-foreground mb-1">Location</p>
+                                  <p className="text-lg font-semibold text-foreground">{farm.latitude.toFixed(2)}, {farm.longitude.toFixed(2)}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Coordinates</p>
+                                </div>
+                              </div>
+
+                              {/* Recommendations based on data */}
+                              <div className="mt-3 pt-3 border-t border-border">
+                                <p className="text-xs font-medium text-muted-foreground mb-2">Recommendations:</p>
+                                <ul className="text-xs text-muted-foreground space-y-1">
+                                  {latestNDVI && latestNDVI.ndvi < 0.4 && (
+                                    <li>• Crop health is below optimal. Consider applying fertilizer or adjusting irrigation.</li>
+                                  )}
+                                  {latestMoisture && latestMoisture.surfaceSoilMoisture < 25 && (
+                                    <li>• Soil moisture is low. Increase irrigation frequency to maintain crop health.</li>
+                                  )}
+                                  {latestMoisture && latestMoisture.surfaceSoilMoisture > 60 && (
+                                    <li>• Soil moisture is high. Monitor for waterlogging; ensure proper drainage.</li>
+                                  )}
+                                  {latestNDVI && latestNDVI.ndvi > 0.5 && latestMoisture && latestMoisture.surfaceSoilMoisture > 30 && latestMoisture.surfaceSoilMoisture < 60 && (
+                                    <li>• Farm conditions are optimal. Maintain current management practices.</li>
+                                  )}
+                                </ul>
                               </div>
                             </div>
                           )
