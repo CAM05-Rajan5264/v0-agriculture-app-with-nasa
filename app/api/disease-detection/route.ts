@@ -19,9 +19,11 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString("base64")
 
     console.log("[v0] Sending image to Plant.ID API for disease detection")
+    console.log("[v0] API Key exists:", !!apiKey)
+    console.log("[v0] Image size:", base64.length, "bytes")
 
-    // First API call: Identify the plant
-    const identifyResponse = await fetch("https://api.plant.id/v3/identification", {
+    // First API call: Identify the plant using Plant.ID API
+    const identifyResponse = await fetch("https://api.plant.id/v2.0/identify", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,6 +32,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         images: [base64],
         similar_images: true,
+        disease: true,
       }),
     })
 
@@ -43,11 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     const identifyData = await identifyResponse.json()
-    console.log("[v0] Plant identification response received")
+    console.log("[v0] Plant identification response received:", JSON.stringify(identifyData).substring(0, 200))
 
-    // Extract plant info and diseases
-    const plantInfo = identifyData.result?.classification
-    const diseases = identifyData.result?.disease
+    // Extract plant info and diseases - Plant.ID returns disease info in suggestions
+    const diseases = identifyData.result?.disease || identifyData.suggestions?.[0]?.details?.disease
 
     if (!diseases || !diseases.classifications || diseases.classifications.length === 0) {
       // No disease detected
