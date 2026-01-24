@@ -30,6 +30,7 @@ export default async function SatellitePage() {
   let soilMoisture = null
   let naturalEvents = []
   let imageLayers = []
+  let farmsSatelliteData: Record<string, { ndvi: any; moisture: any; layers: any }> = {}
 
   if (primaryFarm) {
     const endDate = new Date()
@@ -45,9 +46,30 @@ export default async function SatellitePage() {
 
     soilMoisture = await getSoilMoistureFromSMAP(primaryFarm.latitude, primaryFarm.longitude, 30)
 
-    naturalEvents = await getNaturalEvents(farms || [], 500)
-
     imageLayers = getSatelliteImageLayers(primaryFarm.latitude, primaryFarm.longitude)
+
+    // Fetch satellite data for all farms
+    if (farms && farms.length > 0) {
+      for (const farm of farms) {
+        const farmNDVI = await getSatelliteNDVI(
+          farm.latitude,
+          farm.longitude,
+          startDate.toISOString().split("T")[0],
+          endDate.toISOString().split("T")[0],
+        )
+
+        const farmMoisture = await getSoilMoistureFromSMAP(farm.latitude, farm.longitude, 30)
+        const farmLayers = getSatelliteImageLayers(farm.latitude, farm.longitude)
+
+        farmsSatelliteData[farm.id] = {
+          ndvi: farmNDVI,
+          moisture: farmMoisture,
+          layers: farmLayers,
+        }
+      }
+    }
+
+    naturalEvents = await getNaturalEvents(farms || [], 500)
   }
 
   return (
@@ -129,7 +151,7 @@ export default async function SatellitePage() {
                           <h4 className="font-medium text-foreground">{layer.name}</h4>
                           <p className="mt-1 text-sm text-muted-foreground">{layer.description}</p>
                           <div className="mt-2 flex items-center gap-2">
-                            <Badge variant="outline">{layer.source}</Badge>
+                            <Badge variant="outline">NASA</Badge>
                             <Badge variant="outline">{layer.resolution} resolution</Badge>
                           </div>
                         </div>
@@ -137,6 +159,44 @@ export default async function SatellitePage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {farms && farms.length > 1 && (
+                  <Card className="border-border bg-card">
+                    <CardHeader>
+                      <CardTitle>All Farms Satellite Data</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {farms.map((farm) => {
+                          const farmData = farmsSatelliteData[farm.id]
+                          const latestNDVI = farmData?.ndvi?.[farmData.ndvi.length - 1]
+                          const latestMoisture = farmData?.moisture?.[farmData.moisture.length - 1]
+
+                          return (
+                            <div key={farm.id} className="rounded-lg border border-border p-4">
+                              <h4 className="font-medium text-foreground">{farm.name}</h4>
+                              <p className="text-sm text-muted-foreground">{farm.location}</p>
+                              <div className="mt-3 space-y-2">
+                                {latestNDVI && (
+                                  <div className="text-sm">
+                                    <span className="text-muted-foreground">NDVI: </span>
+                                    <span className="font-medium">{latestNDVI.ndvi.toFixed(3)}</span>
+                                  </div>
+                                )}
+                                {latestMoisture && (
+                                  <div className="text-sm">
+                                    <span className="text-muted-foreground">Soil Moisture: </span>
+                                    <span className="font-medium">{latestMoisture.surfaceSoilMoisture.toFixed(1)}%</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
