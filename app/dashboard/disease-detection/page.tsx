@@ -107,7 +107,7 @@ export default function DiseaseDetectionPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">AI Plant Disease Detection</h1>
         <p className="text-muted-foreground mt-2">
-          Upload a leaf or plant image to detect diseases and get treatment recommendations
+          Upload a clear photo of an infected leaf or plant to detect diseases and get treatment recommendations powered by plant.id
         </p>
       </div>
 
@@ -119,9 +119,19 @@ export default function DiseaseDetectionPage() {
               <Upload className="h-5 w-5" />
               Upload Plant Image
             </CardTitle>
-            <CardDescription>Take a clear photo of the affected leaf or plant</CardDescription>
+            <CardDescription>Take a clear, well-lit photo of the affected area</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-900 font-medium">Tips for best results:</p>
+              <ul className="text-xs text-blue-800 space-y-1 mt-2 list-disc list-inside">
+                <li>Take photo in natural daylight</li>
+                <li>Focus on the affected leaf or affected area</li>
+                <li>Ensure the image is clear and in focus</li>
+                <li>Avoid shadows and backlighting</li>
+              </ul>
+            </div>
+
             <div
               className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
@@ -133,8 +143,11 @@ export default function DiseaseDetectionPage() {
             </div>
 
             {preview && (
-              <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100">
-                <Image src={preview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Image Preview:</p>
+                <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100 border border-border">
+                  <Image src={preview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
+                </div>
               </div>
             )}
 
@@ -147,7 +160,7 @@ export default function DiseaseDetectionPage() {
 
             <Button onClick={handleAnalyze} disabled={!selectedImage || loading} className="w-full" size="lg">
               {loading && <Loader className="h-4 w-4 mr-2 animate-spin" />}
-              {loading ? "Analyzing..." : "Analyze Image"}
+              {loading ? "Analyzing image with AI..." : "Analyze Image"}
             </Button>
           </CardContent>
         </Card>
@@ -164,17 +177,17 @@ export default function DiseaseDetectionPage() {
                 )}
                 AI Analysis Results
               </CardTitle>
-              <CardDescription>Powered by plant.id AI detection</CardDescription>
+              <CardDescription>Powered by plant.id AI engine</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Detected</p>
-                <p className="text-lg font-semibold">{analysis.disease}</p>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs font-medium text-gray-600">DETECTED ISSUE</p>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{analysis.disease}</p>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Confidence Score</span>
-                <span className="text-lg font-semibold">{(analysis.confidence * 100).toFixed(1)}%</span>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Confidence Score</span>
+                <span className="text-lg font-bold text-blue-600">{(analysis.confidence * 100).toFixed(1)}%</span>
               </div>
 
               {analysis.isDisease && (
@@ -187,29 +200,32 @@ export default function DiseaseDetectionPage() {
                     </span>
                   </div>
 
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Observed Symptoms</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {analysis.symptoms.map((symptom: string, idx: number) => (
-                        <li key={idx} className="text-sm">
-                          {symptom}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {analysis.symptoms && analysis.symptoms.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Observed Symptoms</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        {analysis.symptoms.map((symptom: string, idx: number) => (
+                          <li key={idx} className="text-sm text-gray-700">
+                            {symptom}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900 mb-1">Recommended Treatment</p>
-                    <p className="text-sm text-blue-800">{analysis.treatment}</p>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">Recommended Treatment</p>
+                    <p className="text-sm text-blue-900 leading-relaxed">{analysis.treatment}</p>
                   </div>
 
                   {analysis.recommendations && analysis.recommendations.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Action Items</p>
-                      <ol className="list-decimal list-inside space-y-1">
+                    <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                      <p className="text-sm font-semibold text-green-900 mb-3">Action Items (Priority Order)</p>
+                      <ol className="space-y-2">
                         {analysis.recommendations.map((rec: string, idx: number) => (
-                          <li key={idx} className="text-sm">
-                            {rec}
+                          <li key={idx} className="text-sm text-green-900 flex gap-2">
+                            <span className="font-semibold flex-shrink-0">{idx + 1}.</span>
+                            <span>{rec}</span>
                           </li>
                         ))}
                       </ol>
@@ -217,12 +233,17 @@ export default function DiseaseDetectionPage() {
                   )}
                 </>
               )}
+
+              {!analysis.isDisease && (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <p className="text-sm font-semibold text-green-900">Plant Status: Healthy</p>
+                  <p className="text-sm text-green-900 mt-2">{analysis.treatment}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
       </div>
-
-
     </div>
   )
 }

@@ -27,7 +27,7 @@ interface PlantIdResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
 
     // Get authenticated user
     const {
@@ -61,42 +61,47 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
 
-    // Try plant.id API first (server-side with secure API key)
-    try {
-      const apiKey = process.env.PLANT_ID_API_KEY;
-      
-      if (apiKey) {
-        console.log("[v0] Calling plant.id API with key");
-        const response = await fetch("https://api.plant.id/v2/identify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Api-Key": apiKey,
-          },
-          body: JSON.stringify({
-            images: [base64Image],
-            modifiers: ["similar_images"],
-            plant_details: ["description", "url", "common_names", "taxonomy"],
-          }),
-        });
+    // Use plant.id API for disease detection
+    const apiKey = process.env.PLANT_ID_API_KEY;
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API key not configured. Please add PLANT_ID_API_KEY to your environment variables." },
+        { status: 500 }
+      );
+    }
 
-        if (response.ok) {
-          const data: PlantIdResponse = await response.json();
-          console.log("[v0] Plant ID API response received:", data.is_plant);
-          analysisResult = await analyzePlantIdResponse(data);
-        } else {
-          const errorText = await response.text();
-          console.warn("[v0] Plant ID API error:", response.status, errorText);
-          // Fall through to local analysis
-          analysisResult = await getFallbackAnalysis();
-        }
-      } else {
-        console.log("[v0] Plant ID API key not configured, using fallback analysis");
-        analysisResult = await getFallbackAnalysis();
+    try {
+      console.log("[v0] Sending image to plant.id API for analysis...");
+      
+      const response = await fetch("https://api.plant.id/v2/identify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Api-Key": apiKey,
+        },
+        body: JSON.stringify({
+          images: [base64Image],
+          modifiers: ["similar_images"],
+          plant_details: ["description", "url", "common_names", "taxonomy"],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[v0] Plant ID API error:", response.status, errorText);
+        throw new Error(`Plant ID API error: ${response.status} - ${errorText}`);
       }
+
+      const data: PlantIdResponse = await response.json();
+      console.log("[v0] Plant ID API response received");
+      analysisResult = await analyzePlantIdResponse(data);
     } catch (apiError) {
-      console.warn("[v0] Plant ID API failed:", apiError);
-      analysisResult = await getFallbackAnalysis();
+      console.error("[v0] Plant ID API failed:", apiError);
+      return NextResponse.json(
+        { error: `Disease analysis failed: ${apiError instanceof Error ? apiError.message : "Unknown error"}` },
+        { status: 500 }
+      );
     }
 
     // Save to database
@@ -120,39 +125,20 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("[v0] Database error:", error);
-      return NextResponse.json(
-        { error: "Failed to save analysis" },
-        { status: 500 }
-      );
+      // Don't fail the request if database save fails - still return the analysis
+      console.warn("[v0] Analysis complete but database save failed");
     }
 
     return NextResponse.json({
       success: true,
       analysis: analysisResult,
-      savedRecord: data,
+      savedRecord: data || null,
     });
   } catch (error) {
     console.error("[v0] Analysis error:", error);
     return NextResponse.json(
-      { error: "Analysis failed" },
+      { error: "Analysis failed: " + (error instanceof Error ? error.message : "Unknown error") },
       { status: 500 }
     );
   }
-}
-
-async function getFallbackAnalysis() {
-  return {
-    disease: "Analysis service temporarily unavailable",
-    confidence: 0,
-    severity: "mild" as const,
-    symptoms: ["Unable to connect to analysis service"],
-    treatment: "Please try uploading the image again in a moment",
-    urgency: "low" as const,
-    recommendations: [
-      "Check your internet connection",
-      "Try uploading again in a moment",
-      "Ensure your plant.id API key is configured",
-    ],
-    isDisease: false,
-  };
 }
