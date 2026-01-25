@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
     let analysisResult;
 
     // Use plant.id API for disease detection
-    const apiKey = process.env.PLANT_ID_API_KEY;
+    // Try both naming conventions for the API key
+    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY;
     
     console.log("[v0] API Key check - Key exists:", !!apiKey);
-    console.log("[v0] Environment variables available:", Object.keys(process.env).filter(k => k.includes('PLANT') || k.includes('SUPABASE')));
     
     if (!apiKey) {
       console.log("[v0] Plant ID API key not configured, using fallback analysis");
-      analysisResult = await getFallbackAnalysis();
+      analysisResult = getFallbackAnalysis();
     } else {
       try {
         console.log("[v0] Sending image to plant.id API for analysis...");
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
           const errorText = await response.text();
           console.error("[v0] Plant ID API error:", response.status, errorText);
           console.log("[v0] Falling back to local analysis due to API error");
-          analysisResult = await getFallbackAnalysis();
+          analysisResult = getFallbackAnalysis();
         } else {
           const data: PlantIdResponse = await response.json();
           console.log("[v0] Plant ID API response received");
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       } catch (apiError) {
         console.error("[v0] Plant ID API failed:", apiError);
         console.log("[v0] Using fallback analysis due to API error");
-        analysisResult = await getFallbackAnalysis();
+        analysisResult = getFallbackAnalysis();
       }
     }
 
@@ -141,4 +141,21 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function getFallbackAnalysis() {
+  return {
+    disease: "Analysis service temporarily unavailable",
+    confidence: 0,
+    severity: "mild" as const,
+    symptoms: ["Unable to connect to analysis service"],
+    treatment: "Please try uploading the image again in a moment",
+    urgency: "low" as const,
+    recommendations: [
+      "Check your internet connection",
+      "Try uploading again in a moment",
+      "Ensure your PLANT_ID_API_KEY or PLANTID_API_KEY is configured in Vars",
+    ],
+    isDisease: false,
+  };
 }
