@@ -3,20 +3,28 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Leaf, Upload, Loader, CheckCircle } from "lucide-react"
 import Image from "next/image"
-import { analyzeImagePixels, detectPlantDisease } from "@/lib/plant-disease-analyzer"
+
+interface DiseaseAnalysisResult {
+  disease: string
+  confidence: number
+  severity: "mild" | "moderate" | "severe" | "critical"
+  symptoms: string[]
+  treatment: string
+  urgency: "low" | "medium" | "high" | "critical"
+  recommendations: string[]
+  isDisease: boolean
+}
 
 export default function DiseaseDetectionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [analysis, setAnalysis] = useState<any>(null)
+  const [analysis, setAnalysis] = useState<DiseaseAnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,7 +52,7 @@ export default function DiseaseDetectionPage() {
   }
 
   const handleAnalyze = async () => {
-    if (!selectedImage || !preview || !canvasRef.current) {
+    if (!selectedImage || !preview) {
       setError("Please select an image first")
       return
     }
@@ -53,48 +61,24 @@ export default function DiseaseDetectionPage() {
     setError(null)
 
     try {
-      const img = new window.Image()
-      img.crossOrigin = "anonymous"
-      img.onload = async () => {
-        const canvas = canvasRef.current
-        if (!canvas) return
+      // Send to API for analysis
+      const response = await fetch("/api/analyze-disease", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base64Image: preview,
+        }),
+      })
 
-        const ctx = canvas.getContext("2d")
-        if (!ctx) return
-
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-
-        // Analyze image pixels
-        const metrics = analyzeImagePixels(canvas)
-
-        // Detect disease based on analysis
-        const result = detectPlantDisease(metrics)
-
-        setAnalysis(result)
-
-        // Save to database
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (user) {
-          await supabase.from("disease_detections").insert({
-            user_id: user.id,
-            image_url: preview,
-            detected_disease: result.disease,
-            confidence_score: result.confidence,
-            severity: result.severity,
-            symptoms: result.symptoms,
-            recommended_treatment: result.treatment,
-            treatment_urgency: result.urgency,
-            raw_analysis: JSON.stringify(result),
-          })
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Analysis failed")
       }
-      img.src = preview
+
+      const data = await response.json()
+      setAnalysis(data.analysis)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during analysis")
       console.error("[v0] Disease detection error:", err)
@@ -173,63 +157,62 @@ export default function DiseaseDetectionPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {analysis.disease.includes("Healthy") ? (
+                {!analysis.isDisease ? (
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 ) : (
-                  <AlertCircle className="h-5 w-5" />
+                  <AlertCircle className="h-5 w-5 text-orange-600" />
                 )}
-                Analysis Results
+                AI Analysis Results
               </CardTitle>
+              <CardDescription>Powered by plant.id AI detection</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Disease Detected</p>
+                <p className="text-sm font-medium text-muted-foreground">Detected</p>
                 <p className="text-lg font-semibold">{analysis.disease}</p>
               </div>
 
-              {!analysis.disease.includes("Healthy") && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Confidence</span>
-                    <span className="text-lg font-semibold">{(analysis.confidence * 100).toFixed(1)}%</span>
-                  </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Confidence Score</span>
+                <span className="text-lg font-semibold">{(analysis.confidence * 100).toFixed(1)}%</span>
+              </div>
 
+              {analysis.isDisease && (
+                <>
                   <div>
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(analysis.severity)}`}
                     >
-                      {analysis.severity?.charAt(0).toUpperCase() + analysis.severity?.slice(1)}
+                      {analysis.severity?.charAt(0).toUpperCase() + analysis.severity?.slice(1)} Severity
                     </span>
                   </div>
 
-                  {analysis.symptoms && analysis.symptoms.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Symptoms</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {analysis.symptoms.map((symptom: string, idx: number) => (
-                          <li key={idx} className="text-sm">
-                            {symptom}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Recommended Treatment</p>
-                    <p className="text-sm">{analysis.treatment}</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Observed Symptoms</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {analysis.symptoms.map((symptom: string, idx: number) => (
+                        <li key={idx} className="text-sm">
+                          {symptom}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm font-medium text-blue-900 mb-1">Recommended Treatment</p>
+                    <p className="text-sm text-blue-800">{analysis.treatment}</p>
                   </div>
 
                   {analysis.recommendations && analysis.recommendations.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-2">Action Items</p>
-                      <ul className="list-decimal list-inside space-y-1">
+                      <ol className="list-decimal list-inside space-y-1">
                         {analysis.recommendations.map((rec: string, idx: number) => (
                           <li key={idx} className="text-sm">
                             {rec}
                           </li>
                         ))}
-                      </ul>
+                      </ol>
                     </div>
                   )}
                 </>
@@ -239,8 +222,7 @@ export default function DiseaseDetectionPage() {
         )}
       </div>
 
-      {/* Hidden canvas for image analysis */}
-      <canvas ref={canvasRef} className="hidden" />
+
     </div>
   )
 }
