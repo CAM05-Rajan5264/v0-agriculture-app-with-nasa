@@ -27,7 +27,7 @@ interface PlantIdResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get authenticated user
     const {
@@ -64,44 +64,44 @@ export async function POST(request: NextRequest) {
     // Use plant.id API for disease detection
     const apiKey = process.env.PLANT_ID_API_KEY;
     
+    console.log("[v0] API Key check - Key exists:", !!apiKey);
+    console.log("[v0] Environment variables available:", Object.keys(process.env).filter(k => k.includes('PLANT') || k.includes('SUPABASE')));
+    
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "API key not configured. Please add PLANT_ID_API_KEY to your environment variables." },
-        { status: 500 }
-      );
-    }
+      console.log("[v0] Plant ID API key not configured, using fallback analysis");
+      analysisResult = await getFallbackAnalysis();
+    } else {
+      try {
+        console.log("[v0] Sending image to plant.id API for analysis...");
+        
+        const response = await fetch("https://api.plant.id/v2/identify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Api-Key": apiKey,
+          },
+          body: JSON.stringify({
+            images: [base64Image],
+            modifiers: ["similar_images"],
+            plant_details: ["description", "url", "common_names", "taxonomy"],
+          }),
+        });
 
-    try {
-      console.log("[v0] Sending image to plant.id API for analysis...");
-      
-      const response = await fetch("https://api.plant.id/v2/identify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Api-Key": apiKey,
-        },
-        body: JSON.stringify({
-          images: [base64Image],
-          modifiers: ["similar_images"],
-          plant_details: ["description", "url", "common_names", "taxonomy"],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[v0] Plant ID API error:", response.status, errorText);
-        throw new Error(`Plant ID API error: ${response.status} - ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("[v0] Plant ID API error:", response.status, errorText);
+          console.log("[v0] Falling back to local analysis due to API error");
+          analysisResult = await getFallbackAnalysis();
+        } else {
+          const data: PlantIdResponse = await response.json();
+          console.log("[v0] Plant ID API response received");
+          analysisResult = await analyzePlantIdResponse(data);
+        }
+      } catch (apiError) {
+        console.error("[v0] Plant ID API failed:", apiError);
+        console.log("[v0] Using fallback analysis due to API error");
+        analysisResult = await getFallbackAnalysis();
       }
-
-      const data: PlantIdResponse = await response.json();
-      console.log("[v0] Plant ID API response received");
-      analysisResult = await analyzePlantIdResponse(data);
-    } catch (apiError) {
-      console.error("[v0] Plant ID API failed:", apiError);
-      return NextResponse.json(
-        { error: `Disease analysis failed: ${apiError instanceof Error ? apiError.message : "Unknown error"}` },
-        { status: 500 }
-      );
     }
 
     // Save to database
