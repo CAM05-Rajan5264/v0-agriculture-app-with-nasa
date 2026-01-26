@@ -113,10 +113,7 @@ export default function DiseaseDetectionPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">AI Plant Disease Detection</h1>
         <p className="text-muted-foreground mt-2">
-          Upload a clear photo of an infected leaf or plant to detect diseases and get treatment recommendations powered by plant.id
-        </p>
-        <p className="text-sm text-amber-700 mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-          <strong>Setup Required:</strong> Add the environment variable <code className="bg-white px-2 py-1 rounded text-xs font-mono">PLANT_ID_API_KEY</code> in the Vars section for disease detection to work. See the DISEASE_DETECTION_SETUP.md file for details.
+          Upload a clear photo of an infected leaf or plant to detect diseases and get treatment recommendations using AI-powered analysis
         </p>
       </div>
 
@@ -186,7 +183,7 @@ export default function DiseaseDetectionPage() {
                 )}
                 AI Analysis Results
               </CardTitle>
-              <CardDescription>Powered by plant.id AI engine</CardDescription>
+              <CardDescription>Powered by free AI analysis</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-gray-50 p-3 rounded-lg">
