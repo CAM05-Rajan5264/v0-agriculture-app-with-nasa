@@ -66,6 +66,8 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY;
     
     console.log("[v0] API Key check - Key exists:", !!apiKey);
+    console.log("[v0] API Key length:", apiKey?.length);
+    console.log("[v0] API Key starts with:", apiKey?.substring(0, 5));
     
     if (!apiKey) {
       console.log("[v0] Plant ID API key not configured, using fallback analysis");
@@ -74,11 +76,14 @@ export async function POST(request: NextRequest) {
       try {
         console.log("[v0] Sending image to plant.id API for analysis...");
         
+        // Use basic authentication as alternative method
+        const basicAuth = Buffer.from(`client:${apiKey}`).toString('base64');
+        
         const response = await fetch("https://api.plant.id/v2/identify", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Api-Key": apiKey,
+            "Authorization": `Basic ${basicAuth}`,
           },
           body: JSON.stringify({
             images: [base64Image],
