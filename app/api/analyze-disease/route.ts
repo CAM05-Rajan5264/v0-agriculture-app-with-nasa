@@ -39,17 +39,21 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
 
-    try {
-      console.log("[v0] Starting plant disease analysis with Hugging Face API (free)...");
-      
-      // Use Hugging Face free API for image classification
-      analysisResult = await analyzeWithHuggingFace(base64Image);
-      console.log("[v0] Analysis complete via Hugging Face API");
-    } catch (apiError) {
-      console.error("[v0] Hugging Face API error:", apiError);
-      console.log("[v0] Using local pixel-based analysis as fallback");
-      
-      // Fallback to local analysis
+    // Check if Hugging Face API key is available
+    const hfApiKey = process.env.HF_API_KEY || process.env.HUGGING_FACE_API_KEY;
+    
+    if (hfApiKey) {
+      try {
+        console.log("[v0] Starting plant disease analysis with Hugging Face API...");
+        analysisResult = await analyzeWithHuggingFace(base64Image, hfApiKey);
+        console.log("[v0] Analysis complete via Hugging Face API");
+      } catch (apiError) {
+        console.error("[v0] Hugging Face API error:", apiError);
+        console.log("[v0] Falling back to local analysis...");
+        analysisResult = await performLocalAnalysis(base64Image);
+      }
+    } else {
+      console.log("[v0] No Hugging Face API key configured, using local pixel-based analysis");
       analysisResult = await performLocalAnalysis(base64Image);
     }
 
@@ -92,14 +96,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function analyzeWithHuggingFace(base64Image: string) {
-  const hfApiKey = process.env.HF_API_KEY || process.env.HUGGING_FACE_API_KEY;
-  
-  if (!hfApiKey) {
-    console.log("[v0] Hugging Face API key not configured, using local analysis");
-    throw new Error("No Hugging Face API key");
-  }
-
+async function analyzeWithHuggingFace(base64Image: string, hfApiKey: string) {
   // Remove data URL prefix to get just base64
   const base64Data = base64Image.split(",")[1] || base64Image;
   
