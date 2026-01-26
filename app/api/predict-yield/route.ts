@@ -76,25 +76,30 @@ export async function POST(request: NextRequest) {
 
     // Save prediction to database
     const { data: savedPrediction, error: saveError } = await supabase
-      .from("yield_predictions")
+      .from("crop_yield_predictions")
       .insert({
         user_id: user.id,
         crop_id: cropId,
         farm_id: farmId,
-        estimated_yield: prediction.estimatedYield,
-        confidence: prediction.confidence,
-        best_case_yield: prediction.bestCaseYield,
-        worst_case_yield: prediction.worstCaseYield,
-        factors: JSON.stringify(prediction.factors),
-        recommendations: JSON.stringify(prediction.recommendations),
-        risk_factors: JSON.stringify(prediction.riskFactors),
-        input_data: JSON.stringify(forecastInput),
+        predicted_yield: prediction.estimatedYield,
+        confidence_score: Math.round(prediction.confidence * 100),
+        prediction_factors: {
+          estimated: prediction.estimatedYield,
+          best_case: prediction.bestCaseYield,
+          worst_case: prediction.worstCaseYield,
+          factors: prediction.factors,
+          recommendations: prediction.recommendations,
+          risk_factors: prediction.riskFactors,
+          input_data: forecastInput,
+        },
+        model_version: "v1.0",
+        prediction_for_date: new Date().toISOString().split('T')[0],
       })
       .select()
       .single();
 
     if (saveError) {
-      console.warn("[v0] Failed to save prediction:", saveError);
+      console.warn("[v0] Failed to save prediction:", saveError.message);
       // Still return the prediction even if save fails
     }
 
@@ -133,7 +138,7 @@ export async function GET(request: NextRequest) {
     const farmId = searchParams.get("farmId");
 
     let query = supabase
-      .from("yield_predictions")
+      .from("crop_yield_predictions")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
