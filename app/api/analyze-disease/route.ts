@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { base64Image, cropId, farmId } = body;
+    const { base64Image, cropId, farmId, cropType } = body;
 
     if (!base64Image) {
       return NextResponse.json(
@@ -39,21 +39,21 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
 
-    // Check if Hugging Face API key is available
-    const hfApiKey = process.env.HF_API_KEY || process.env.HUGGING_FACE_API_KEY;
+    // Try Kindwise crop.health API first (primary method)
+    const kindwiseApiKey = process.env.KINDWISE_API_KEY || process.env.CROP_HEALTH_API_KEY;
     
-    if (hfApiKey) {
+    if (kindwiseApiKey) {
       try {
-        console.log("[v0] Starting plant disease analysis with Hugging Face API...");
-        analysisResult = await analyzeWithHuggingFace(base64Image, hfApiKey);
-        console.log("[v0] Analysis complete via Hugging Face API");
+        console.log("[v0] Starting disease analysis with Kindwise crop.health API...");
+        analysisResult = await analyzeWithKindwise(base64Image, kindwiseApiKey, cropType);
+        console.log("[v0] Analysis complete via Kindwise API");
       } catch (apiError) {
-        console.error("[v0] Hugging Face API error:", apiError);
+        console.error("[v0] Kindwise API error:", apiError);
         console.log("[v0] Falling back to local analysis...");
         analysisResult = await performLocalAnalysis(base64Image);
       }
     } else {
-      console.log("[v0] No Hugging Face API key configured, using local pixel-based analysis");
+      console.log("[v0] No Kindwise API key configured, using local pixel-based analysis");
       analysisResult = await performLocalAnalysis(base64Image);
     }
 
@@ -94,6 +94,150 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function analyzeWithKindwise(base64Image: string, apiKey: string, cropType?: string) {
+  console.log("[v0] Sending image to Kindwise crop.health API...");
+  
+  // Remove data URL prefix to get just base64
+  const base64Data = base64Image.split(",")[1] || base64Image;
+  
+  try {
+    const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Api-Key": apiKey,
+      },
+      body: JSON.stringify({
+        images: [base64Data],
+        // Kindwise recommends providing crop type for better accuracy
+        ...(cropType && { crop_type: cropType }),
+        details: [
+          "treatment",
+          "description",
+          "severity",
+          "symptoms",
+          "taxonomy",
+          "url",
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[v0] Kindwise API error:", response.status, errorText);
+      throw new Error(`Kindwise API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("[v0] Kindwise API response received");
+
+    // Parse Kindwise response
+    return mapKindwiseResponse(data);
+  } catch (error) {
+    console.error("[v0] Kindwise API call failed:", error);
+    throw error;
+  }
+}
+
+function mapKindwiseResponse(kindwiseData: any) {
+  try {
+    // Kindwise response structure
+    const suggestions = kindwiseData.suggestions || [];
+    
+    if (!suggestions || suggestions.length === 0) {
+      return {
+        disease: "Unable to identify issue",
+        confidence: 0.5,
+        severity: "mild" as const,
+        symptoms: ["No clear identification"],
+        treatment: "Please provide a clearer image",
+        urgency: "low" as const,
+        recommendations: [
+          "Take a clearer photo with better lighting",
+          "Focus on affected area",
+          "Include the whole leaf or plant part",
+        ],
+        isDisease: false,
+      };
+    }
+
+    const topSuggestion = suggestions[0];
+    const isHealthy = topSuggestion.id === "healthy" || 
+                      (topSuggestion.name && topSuggestion.name.toLowerCase().includes("healthy"));
+    
+    const details = topSuggestion.details || {};
+    const severity = details.severity?.toLowerCase() || "mild";
+    const confidence = topSuggestion.probability || topSuggestion.score || 0.8;
+
+    return {
+      disease: topSuggestion.name || "Unknown",
+      confidence: Math.min(0.99, Math.max(0.5, confidence)),
+      severity: severity as "mild" | "moderate" | "severe" | "critical",
+      symptoms: details.symptoms ? (Array.isArray(details.symptoms) ? details.symptoms : [details.symptoms]) : [],
+      treatment: details.treatment || "Consult with an agronomist",
+      urgency: getSeverityUrgency(severity),
+      recommendations: generateRecommendations(topSuggestion.name, details.treatment),
+      isDisease: !isHealthy,
+      rawData: {
+        commonName: topSuggestion.name,
+        scientificName: details.taxonomy?.species || details.taxonomy?.genus,
+        type: details.type,
+        spreading: details.spreading,
+        description: details.description,
+        url: details.url,
+      },
+    };
+  } catch (error) {
+    console.error("[v0] Error parsing Kindwise response:", error);
+    throw error;
+  }
+}
+
+function getSeverityUrgency(severity: string): "low" | "medium" | "high" | "critical" {
+  const severityMap: Record<string, "low" | "medium" | "high" | "critical"> = {
+    mild: "low",
+    moderate: "medium",
+    severe: "high",
+    critical: "critical",
+  };
+  return severityMap[severity.toLowerCase()] || "medium";
+}
+
+function generateRecommendations(diseaseName: string, treatment: string): string[] {
+  const recommendations: string[] = [];
+
+  if (treatment) {
+    recommendations.push(treatment);
+  }
+
+  // Add standard recommendations based on disease type
+  if (diseaseName?.toLowerCase().includes("fungal") || diseaseName?.toLowerCase().includes("mildew")) {
+    recommendations.push("Improve air circulation and reduce humidity");
+    recommendations.push("Remove and destroy infected plant parts");
+    recommendations.push("Apply fungicide if recommended");
+  } else if (diseaseName?.toLowerCase().includes("bacterial")) {
+    recommendations.push("Sterilize pruning tools between cuts");
+    recommendations.push("Remove infected plant parts");
+    recommendations.push("Avoid watering leaves");
+  } else if (diseaseName?.toLowerCase().includes("viral")) {
+    recommendations.push("Control insect vectors (aphids, whiteflies)");
+    recommendations.push("Remove and destroy infected plants");
+    recommendations.push("Sterilize all tools");
+  } else if (diseaseName?.toLowerCase().includes("pest") || diseaseName?.toLowerCase().includes("insect")) {
+    recommendations.push("Apply appropriate insecticide if available");
+    recommendations.push("Remove heavily infested plant parts");
+    recommendations.push("Monitor for further spread");
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push("Monitor the affected plant closely");
+    recommendations.push("Provide optimal growing conditions");
+    recommendations.push("Consult with local agricultural extension");
+  }
+
+  return recommendations;
 }
 
 async function analyzeWithHuggingFace(base64Image: string, hfApiKey: string) {

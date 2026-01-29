@@ -6,6 +6,7 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Leaf, Upload, Loader, CheckCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 
 interface DiseaseAnalysisResult {
@@ -19,6 +20,32 @@ interface DiseaseAnalysisResult {
   isDisease: boolean
 }
 
+const SUPPORTED_CROPS = [
+  "Apple",
+  "Banana",
+  "Barley",
+  "Cassava",
+  "Citrus",
+  "Cocoa",
+  "Coffee",
+  "Corn",
+  "Cotton",
+  "Cucumber",
+  "Eggplant",
+  "Garlic",
+  "Grapevine",
+  "Oil palm",
+  "Onion",
+  "Potato",
+  "Rice",
+  "Soybean",
+  "Sugarcane",
+  "Tea",
+  "Tobacco",
+  "Tomato",
+  "Wheat",
+]
+
 export default function DiseaseDetectionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -26,6 +53,7 @@ export default function DiseaseDetectionPage() {
   const [loading, setLoading] = useState(false)
   const [analysis, setAnalysis] = useState<DiseaseAnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedCrop, setSelectedCrop] = useState<string>("")
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -61,7 +89,7 @@ export default function DiseaseDetectionPage() {
     setError(null)
 
     try {
-      // Send to API for analysis
+      // Send to API for analysis with crop type for better accuracy
       const response = await fetch("/api/analyze-disease", {
         method: "POST",
         headers: {
@@ -69,6 +97,7 @@ export default function DiseaseDetectionPage() {
         },
         body: JSON.stringify({
           base64Image: preview,
+          cropType: selectedCrop || undefined,
         }),
       })
 
@@ -136,6 +165,24 @@ export default function DiseaseDetectionPage() {
                 <li>Ensure the image is clear and in focus</li>
                 <li>Avoid shadows and backlighting</li>
               </ul>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Crop (Optional)</label>
+              <Select value={selectedCrop} onValueChange={setSelectedCrop}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select crop for better accuracy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto-detect crop</SelectItem>
+                  {SUPPORTED_CROPS.map((crop) => (
+                    <SelectItem key={crop} value={crop}>
+                      {crop}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">Selecting your crop type improves analysis accuracy</p>
             </div>
 
             <div
