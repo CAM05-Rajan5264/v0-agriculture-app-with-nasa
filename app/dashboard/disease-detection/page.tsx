@@ -3,21 +3,57 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, Leaf, Upload, Loader, CheckCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
-import { analyzeImagePixels, detectPlantDisease } from "@/lib/plant-disease-analyzer"
+
+interface DiseaseAnalysisResult {
+  disease: string
+  confidence: number
+  severity: "mild" | "moderate" | "severe" | "critical"
+  symptoms: string[]
+  treatment: string
+  urgency: "low" | "medium" | "high" | "critical"
+  recommendations: string[]
+  isDisease: boolean
+}
+
+const SUPPORTED_CROPS = [
+  "Apple",
+  "Banana",
+  "Barley",
+  "Cassava",
+  "Citrus",
+  "Cocoa",
+  "Coffee",
+  "Corn",
+  "Cotton",
+  "Cucumber",
+  "Eggplant",
+  "Garlic",
+  "Grapevine",
+  "Oil palm",
+  "Onion",
+  "Potato",
+  "Rice",
+  "Soybean",
+  "Sugarcane",
+  "Tea",
+  "Tobacco",
+  "Tomato",
+  "Wheat",
+]
 
 export default function DiseaseDetectionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [analysis, setAnalysis] = useState<any>(null)
+  const [analysis, setAnalysis] = useState<DiseaseAnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedCrop, setSelectedCrop] = useState<string>("")
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -44,7 +80,7 @@ export default function DiseaseDetectionPage() {
   }
 
   const handleAnalyze = async () => {
-    if (!selectedImage || !preview || !canvasRef.current) {
+    if (!selectedImage || !preview) {
       setError("Please select an image first")
       return
     }
@@ -53,51 +89,34 @@ export default function DiseaseDetectionPage() {
     setError(null)
 
     try {
-      const img = new window.Image()
-      img.crossOrigin = "anonymous"
-      img.onload = async () => {
-        const canvas = canvasRef.current
-        if (!canvas) return
+      // Send to API for analysis with crop type for better accuracy
+      const response = await fetch("/api/analyze-disease", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base64Image: preview,
+          cropType: selectedCrop || undefined,
+        }),
+      })
 
-        const ctx = canvas.getContext("2d")
-        if (!ctx) return
-
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-
-        // Analyze image pixels
-        const metrics = analyzeImagePixels(canvas)
-
-        // Detect disease based on analysis
-        const result = detectPlantDisease(metrics)
-
-        setAnalysis(result)
-
-        // Save to database
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
-        if (user) {
-          await supabase.from("disease_detections").insert({
-            user_id: user.id,
-            image_url: preview,
-            detected_disease: result.disease,
-            confidence_score: result.confidence,
-            severity: result.severity,
-            symptoms: result.symptoms,
-            recommended_treatment: result.treatment,
-            treatment_urgency: result.urgency,
-            raw_analysis: JSON.stringify(result),
-          })
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Analysis failed")
       }
-      img.src = preview
+
+      const data = await response.json()
+      setAnalysis(data.analysis)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred during analysis")
-      console.error("[v0] Disease detection error:", err)
+      const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis";
+      setError(errorMessage);
+      console.error("[v0] Disease detection error:", err);
+      
+      // Check if it's an API key issue
+      if (errorMessage.includes("API key") || errorMessage.includes("not configured")) {
+        setError("Plant.id API key is not configured. Please add PLANT_ID_API_KEY to your environment variables in the Vars section.");
+      }
     } finally {
       setLoading(false)
     }
@@ -123,7 +142,7 @@ export default function DiseaseDetectionPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">AI Plant Disease Detection</h1>
         <p className="text-muted-foreground mt-2">
-          Upload a leaf or plant image to detect diseases and get treatment recommendations
+          Upload a clear photo of an infected leaf or plant to detect diseases and get treatment recommendations using AI-powered analysis
         </p>
       </div>
 
@@ -135,9 +154,37 @@ export default function DiseaseDetectionPage() {
               <Upload className="h-5 w-5" />
               Upload Plant Image
             </CardTitle>
-            <CardDescription>Take a clear photo of the affected leaf or plant</CardDescription>
+            <CardDescription>Take a clear, well-lit photo of the affected area</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-900 font-medium">Tips for best results:</p>
+              <ul className="text-xs text-blue-800 space-y-1 mt-2 list-disc list-inside">
+                <li>Take photo in natural daylight</li>
+                <li>Focus on the affected leaf or affected area</li>
+                <li>Ensure the image is clear and in focus</li>
+                <li>Avoid shadows and backlighting</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Select Crop (Optional)</label>
+              <Select value={selectedCrop} onValueChange={setSelectedCrop}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select crop for better accuracy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto-detect crop</SelectItem>
+                  {SUPPORTED_CROPS.map((crop) => (
+                    <SelectItem key={crop} value={crop}>
+                      {crop}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">Selecting your crop type improves analysis accuracy</p>
+            </div>
+
             <div
               className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
@@ -149,8 +196,11 @@ export default function DiseaseDetectionPage() {
             </div>
 
             {preview && (
-              <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100">
-                <Image src={preview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Image Preview:</p>
+                <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100 border border-border">
+                  <Image src={preview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
+                </div>
               </div>
             )}
 
@@ -163,7 +213,7 @@ export default function DiseaseDetectionPage() {
 
             <Button onClick={handleAnalyze} disabled={!selectedImage || loading} className="w-full" size="lg">
               {loading && <Loader className="h-4 w-4 mr-2 animate-spin" />}
-              {loading ? "Analyzing..." : "Analyze Image"}
+              {loading ? "Analyzing image with AI..." : "Analyze Image"}
             </Button>
           </CardContent>
         </Card>
@@ -173,41 +223,42 @@ export default function DiseaseDetectionPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {analysis.disease.includes("Healthy") ? (
+                {!analysis.isDisease ? (
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 ) : (
-                  <AlertCircle className="h-5 w-5" />
+                  <AlertCircle className="h-5 w-5 text-orange-600" />
                 )}
-                Analysis Results
+                AI Analysis Results
               </CardTitle>
+              <CardDescription>Powered by free AI analysis</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Disease Detected</p>
-                <p className="text-lg font-semibold">{analysis.disease}</p>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs font-medium text-gray-600">DETECTED ISSUE</p>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{analysis.disease}</p>
               </div>
 
-              {!analysis.disease.includes("Healthy") && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Confidence</span>
-                    <span className="text-lg font-semibold">{(analysis.confidence * 100).toFixed(1)}%</span>
-                  </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Confidence Score</span>
+                <span className="text-lg font-bold text-blue-600">{(analysis.confidence * 100).toFixed(1)}%</span>
+              </div>
 
+              {analysis.isDisease && (
+                <>
                   <div>
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getSeverityColor(analysis.severity)}`}
                     >
-                      {analysis.severity?.charAt(0).toUpperCase() + analysis.severity?.slice(1)}
+                      {analysis.severity?.charAt(0).toUpperCase() + analysis.severity?.slice(1)} Severity
                     </span>
                   </div>
 
                   {analysis.symptoms && analysis.symptoms.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Symptoms</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Observed Symptoms</p>
                       <ul className="list-disc list-inside space-y-1">
                         {analysis.symptoms.map((symptom: string, idx: number) => (
-                          <li key={idx} className="text-sm">
+                          <li key={idx} className="text-sm text-gray-700">
                             {symptom}
                           </li>
                         ))}
@@ -215,32 +266,37 @@ export default function DiseaseDetectionPage() {
                     </div>
                   )}
 
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Recommended Treatment</p>
-                    <p className="text-sm">{analysis.treatment}</p>
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">Recommended Treatment</p>
+                    <p className="text-sm text-blue-900 leading-relaxed">{analysis.treatment}</p>
                   </div>
 
                   {analysis.recommendations && analysis.recommendations.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Action Items</p>
-                      <ul className="list-decimal list-inside space-y-1">
+                    <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                      <p className="text-sm font-semibold text-green-900 mb-3">Action Items (Priority Order)</p>
+                      <ol className="space-y-2">
                         {analysis.recommendations.map((rec: string, idx: number) => (
-                          <li key={idx} className="text-sm">
-                            {rec}
+                          <li key={idx} className="text-sm text-green-900 flex gap-2">
+                            <span className="font-semibold flex-shrink-0">{idx + 1}.</span>
+                            <span>{rec}</span>
                           </li>
                         ))}
-                      </ul>
+                      </ol>
                     </div>
                   )}
                 </>
+              )}
+
+              {!analysis.isDisease && (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <p className="text-sm font-semibold text-green-900">Plant Status: Healthy</p>
+                  <p className="text-sm text-green-900 mt-2">{analysis.treatment}</p>
+                </div>
               )}
             </CardContent>
           </Card>
         )}
       </div>
-
-      {/* Hidden canvas for image analysis */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
