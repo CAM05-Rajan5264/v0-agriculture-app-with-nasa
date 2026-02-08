@@ -169,12 +169,11 @@ export default function DiseaseDetectionPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Select Crop (Optional)</label>
-              <Select value={selectedCrop} onValueChange={setSelectedCrop}>
+              <Select value={selectedCrop || "none"} onValueChange={(value) => setSelectedCrop(value === "none" ? "" : value)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select crop for better accuracy" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Auto-detect crop</SelectItem>
                   {SUPPORTED_CROPS.map((crop) => (
                     <SelectItem key={crop} value={crop}>
                       {crop}
