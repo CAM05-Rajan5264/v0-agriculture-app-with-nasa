@@ -87,6 +87,7 @@ export default function DiseaseDetectionPage() {
 
     setLoading(true)
     setError(null)
+    console.log("[v0] Starting disease analysis with image size:", preview.length, "bytes")
 
     try {
       // Send to API for analysis with crop type for better accuracy
@@ -101,12 +102,16 @@ export default function DiseaseDetectionPage() {
         }),
       })
 
+      console.log("[v0] API response status:", response.status)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error("[v0] API error response:", errorData)
         throw new Error(errorData.error || "Analysis failed")
       }
 
       const data = await response.json()
+      console.log("[v0] Analysis result received:", data.analysis)
       setAnalysis(data.analysis)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis";
