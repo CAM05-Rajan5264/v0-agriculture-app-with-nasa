@@ -110,12 +110,15 @@ export default function DiseaseDetectionPage() {
       setAnalysis(data.analysis)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis";
-      setError(errorMessage);
       console.error("[v0] Disease detection error:", err);
       
-      // Check if it's an API key issue
-      if (errorMessage.includes("API key") || errorMessage.includes("not configured")) {
-        setError("Plant.id API key is not configured. Please add PLANT_ID_API_KEY to your environment variables in the Vars section.");
+      // Provide helpful error messages
+      if (errorMessage.includes("Unauthorized")) {
+        setError("Please log in to use the disease detection feature.");
+      } else if (errorMessage.includes("Image")) {
+        setError("Image format error. Please ensure it's a valid image file (JPEG, PNG, or WebP) under 5MB.");
+      } else {
+        setError(errorMessage || "Analysis failed. Please try again with a clearer image.");
       }
     } finally {
       setLoading(false)
@@ -144,6 +147,12 @@ export default function DiseaseDetectionPage() {
         <p className="text-muted-foreground mt-2">
           Upload a clear photo of an infected leaf or plant to detect diseases and get treatment recommendations using AI-powered analysis
         </p>
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm font-medium text-green-900">✅ Free Analysis Enabled</p>
+          <p className="text-xs text-green-800 mt-1">
+            This system uses advanced AI analysis completely FREE. No API keys required. All results are saved to your account for tracking.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -155,6 +164,10 @@ export default function DiseaseDetectionPage() {
               Upload Plant Image
             </CardTitle>
             <CardDescription>Take a clear, well-lit photo of the affected area</CardDescription>
+            <div className="mt-3 text-xs bg-blue-50 border border-blue-200 rounded p-2">
+              <p className="font-medium text-blue-900">💡 Free AI Analysis Active</p>
+              <p className="text-blue-800 mt-1">Your analysis will be powered by advanced image recognition AI. Results are saved to your account.</p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
