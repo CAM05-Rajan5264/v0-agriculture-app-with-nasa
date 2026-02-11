@@ -8,7 +8,7 @@ import {
   Droplets,
   Leaf,
   Zap,
-  Harvest,
+  Scissors,
   AlertTriangle,
 } from 'lucide-react';
 import { GameCrop } from '@/lib/game-types';
@@ -119,7 +119,7 @@ export function GameActions({
           className="w-full justify-start bg-green-600 hover:bg-green-700"
           size="sm"
         >
-          <Harvest className="h-4 w-4 mr-2" />
+          <Scissors className="h-4 w-4 mr-2" />
           <span className="flex-1">Harvest Crop</span>
           <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
             Ready!
