@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const { data: crops, error: cropsError } = await supabase
       .from('game_crops')
       .select('*')
-      .eq('game_id', gameId)
+      .eq('game_farm_id', gameId)
       .order('planted_date', { ascending: false });
 
     if (cropsError) {
@@ -40,16 +40,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch crops' }, { status: 500 });
     }
 
+    // Fetch resources
+    const { data: resources } = await supabase
+      .from('game_resources')
+      .select('*')
+      .eq('game_farm_id', gameId)
+      .single();
+
     // Fetch weather effects
     const { data: weatherEffects } = await supabase
       .from('game_weather_effects')
       .select('*')
-      .in('crop_id', crops.map(c => c.id) || [])
+      .eq('game_farm_id', gameId)
       .order('created_at', { ascending: false });
 
     return NextResponse.json({
       game,
-      crops,
+      crops: crops || [],
+      resources,
       weatherEffects: weatherEffects || [],
     });
   } catch (error) {

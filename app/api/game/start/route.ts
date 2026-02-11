@@ -11,27 +11,28 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { farmName, cropType } = body;
+    const { farmName, cropType, location, latitude, longitude } = body;
 
-    if (!farmName || !cropType) {
+    if (!farmName || !cropType || !location || latitude === undefined || longitude === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: farmName, cropType' },
+        { error: 'Missing required fields: farmName, cropType, location, latitude, longitude' },
         { status: 400 }
       );
     }
 
-    // Create a new game
+    // Create a new game farm
     const { data: gameData, error: gameError } = await supabase
       .from('game_farms')
       .insert({
         user_id: user.id,
-        farm_name: farmName,
-        status: 'active',
-        score: 0,
-        resources_water: 100,
-        resources_fertilizer: 50,
-        resources_seeds: 50,
-        resources_gold: 0,
+        name: farmName,
+        location: location,
+        latitude: latitude,
+        longitude: longitude,
+        size_hectares: 10,
+        total_points: 0,
+        total_harvests: 0,
+        best_yield: 0,
       })
       .select()
       .single();
@@ -41,25 +42,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create game' }, { status: 500 });
     }
 
+    // Create game resources for the farm
+    const { error: resourcesError } = await supabase
+      .from('game_resources')
+      .insert({
+        game_farm_id: gameData.id,
+        water_available: 1000,
+        water_capacity: 1000,
+        fertilizer_available: 500,
+        fertilizer_capacity: 500,
+        seeds_available: 100,
+        cash: 5000,
+      });
+
+    if (resourcesError) {
+      console.error('[v0] Resources creation error:', resourcesError);
+      return NextResponse.json({ error: 'Failed to create resources' }, { status: 500 });
+    }
+
     // Plant initial crop
     const plantDate = new Date().toISOString();
-    const harvestDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(); // 60 days later
 
     const { data: cropData, error: cropError } = await supabase
       .from('game_crops')
       .insert({
-        game_id: gameData.id,
+        game_farm_id: gameData.id,
         crop_type: cropType,
-        status: 'sprouted',
-        health: 80,
-        water_level: 100,
-        growth_progress: 5,
         planted_date: plantDate,
-        expected_harvest_date: harvestDate,
-        nasa_weather_score: 0,
-        ndvi_score: 0.3,
-        estimated_yield: 0,
-        disease_risk: 15,
+        growth_stage: 'seedling',
+        health_score: 80,
+        water_level: 100,
+        nutrient_level: 50,
+        disease_risk: 0.15,
+        harvested: false,
       })
       .select()
       .single();
@@ -68,16 +83,6 @@ export async function POST(request: NextRequest) {
       console.error('[v0] Crop creation error:', cropError);
       return NextResponse.json({ error: 'Failed to plant crop' }, { status: 500 });
     }
-
-    // Deduct initial resources
-    await supabase
-      .from('game_farms')
-      .update({
-        resources_water: 80,
-        resources_fertilizer: 45,
-        resources_seeds: 49,
-      })
-      .eq('id', gameData.id);
 
     return NextResponse.json({
       game: gameData,

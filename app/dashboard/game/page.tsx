@@ -75,12 +75,22 @@ export default function GamePage() {
   const startGame = async (farmName: string) => {
     setLoading(true);
     try {
+      // Get default location (Delhi, India - where farmers often use smart farming)
+      const defaultLocation = {
+        location: 'Delhi, India',
+        latitude: 28.661395,
+        longitude: 77.092855,
+      };
+
       const response = await fetch('/api/game/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           farmName,
           cropType: selectedCrop,
+          location: defaultLocation.location,
+          latitude: defaultLocation.latitude,
+          longitude: defaultLocation.longitude,
         }),
       });
 
@@ -189,8 +199,9 @@ export default function GamePage() {
   }
 
   const activeCrop = crops[0];
-  const harvestedCrops = crops.filter((c) => c.status === 'harvested');
-  const totalScore = game?.score || 0;
+  const harvestedCrops = crops.filter((c) => c.harvested === true);
+  const totalScore = game?.total_points || 0;
+  const resources = (game as any)?.resources;
 
   return (
     <div className="space-y-6">
@@ -198,7 +209,7 @@ export default function GamePage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Farm Tycoon</h1>
-          <p className="text-gray-600">{game?.farmName || 'My Farm'}</p>
+          <p className="text-gray-600">{game?.name || 'My Farm'}</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold flex items-center gap-2">
@@ -209,25 +220,25 @@ export default function GamePage() {
       </div>
 
       {/* Resources Bar */}
-      {game && (
+      {resources && (
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{game.resources_water}</div>
+                <div className="text-2xl font-bold text-blue-600">{Math.round(resources.water_available)}</div>
                 <p className="text-xs text-gray-600">Water</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{game.resources_fertilizer}</div>
+                <div className="text-2xl font-bold text-green-600">{Math.round(resources.fertilizer_available)}</div>
                 <p className="text-xs text-gray-600">Fertilizer</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{game.resources_seeds}</div>
+                <div className="text-2xl font-bold text-yellow-600">{Math.round(resources.seeds_available)}</div>
                 <p className="text-xs text-gray-600">Seeds</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{game.resources_gold}</div>
-                <p className="text-xs text-gray-600">Gold</p>
+                <div className="text-2xl font-bold text-purple-600">{Math.round(resources.cash)}</div>
+                <p className="text-xs text-gray-600">Cash</p>
               </div>
               <div className="text-center">
                 <div className="text-lg font-bold text-amber-600">{harvestedCrops.length}</div>
@@ -273,16 +284,24 @@ export default function GamePage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div>
-                  <p className="text-gray-600">Expected Harvest</p>
-                  <p className="font-semibold">{new Date(activeCrop.expectedHarvestDate).toLocaleDateString()}</p>
+                  <p className="text-gray-600">Planted Date</p>
+                  <p className="font-semibold">{new Date(activeCrop.planted_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">NASA Weather Score</p>
-                  <p className="font-semibold">{Math.round(activeCrop.nasaWeatherScore)}/100</p>
+                  <p className="text-gray-600">Growth Stage</p>
+                  <p className="font-semibold capitalize">{activeCrop.growth_stage || 'Unknown'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Satellite Health (NDVI)</p>
-                  <p className="font-semibold">{activeCrop.ndviScore.toFixed(2)}</p>
+                  <p className="text-gray-600">Health Score</p>
+                  <p className="font-semibold">{Math.round(activeCrop.health_score || 0)}/100</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Water Level</p>
+                  <p className="font-semibold">{Math.round(activeCrop.water_level || 0)}%</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Disease Risk</p>
+                  <p className="font-semibold">{((activeCrop.disease_risk || 0) * 100).toFixed(1)}%</p>
                 </div>
               </CardContent>
             </Card>
@@ -325,18 +344,21 @@ export default function GamePage() {
               You have harvested {harvestedCrops.length} crop{harvestedCrops.length !== 1 ? 's' : ''}
             </p>
             <div className="space-y-2">
-              {harvestedCrops.map((crop, i) => (
-                <div key={crop.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div>
-                    <p className="font-medium">
-                      {CROP_DATA[crop.cropType as CropType]?.icon}{' '}
-                      {CROP_DATA[crop.cropType as CropType]?.name}
-                    </p>
-                    <p className="text-xs text-gray-600">Yield: {crop.estimatedYield} kg</p>
+              {harvestedCrops.map((crop, i) => {
+                const cropData = CROP_DATA[crop.crop_type as CropType];
+                const yieldEstimate = Math.round((crop.health_score || 75) * (crop.water_level || 70) / 100);
+                return (
+                  <div key={crop.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div>
+                      <p className="font-medium">
+                        {cropData?.icon} {cropData?.name || crop.crop_type}
+                      </p>
+                      <p className="text-xs text-gray-600">Yield: {yieldEstimate} kg</p>
+                    </div>
+                    <Badge>{Math.round(yieldEstimate * 10)} Gold</Badge>
                   </div>
-                  <Badge>{crop.estimatedYield * 10} Gold</Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
