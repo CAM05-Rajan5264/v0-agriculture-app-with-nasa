@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
 
     // Fetch all games with their scores, ranked
     const { data: games, error } = await supabase

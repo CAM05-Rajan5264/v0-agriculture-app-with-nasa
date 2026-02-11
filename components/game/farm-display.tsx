@@ -52,20 +52,9 @@ export function FarmDisplay({ crops, gameStatus }: FarmDisplayProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {crops.map((crop) => {
-        const cropData = CROP_DATA[crop.crop_type as CropType];
-        const health = crop.health_score || 50;
-        const water = crop.water_level || 50;
-        const nutrient = crop.nutrient_level || 30;
-        const diseaseRisk = (crop.disease_risk || 0) * 100;
-        const diseaseAlert = diseaseRisk > 40;
-        const growthMap: Record<string, number> = {
-          seedling: 10,
-          sprouting: 25,
-          vegetative: 50,
-          flowering: 75,
-          mature: 95,
-        };
-        const growthProgress = growthMap[crop.growth_stage] || 30;
+        const cropData = CROP_DATA[crop.cropType as CropType];
+        const isHealthy = crop.health >= 70;
+        const diseaseAlert = crop.diseaseRisk > 60;
 
         return (
           <Card key={crop.id} className="overflow-hidden">
@@ -74,9 +63,9 @@ export function FarmDisplay({ crops, gameStatus }: FarmDisplayProps) {
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{cropData?.icon || '🌱'}</span>
                   <div>
-                    <CardTitle className="text-lg">{cropData?.name || crop.crop_type}</CardTitle>
-                    <Badge className={`mt-1 ${getStatusColor(crop.growth_stage)}`}>
-                      {(crop.growth_stage || 'seedling').charAt(0).toUpperCase() + (crop.growth_stage || 'seedling').slice(1)}
+                    <CardTitle className="text-lg">{cropData?.name || crop.cropType}</CardTitle>
+                    <Badge className={`mt-1 ${getStatusColor(crop.status)}`}>
+                      {crop.status.charAt(0).toUpperCase() + crop.status.slice(1)}
                     </Badge>
                   </div>
                 </div>
@@ -88,23 +77,23 @@ export function FarmDisplay({ crops, gameStatus }: FarmDisplayProps) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Growth Progress</span>
-                  <span className="text-xs text-gray-500">{Math.round(growthProgress)}%</span>
+                  <span className="text-xs text-gray-500">{Math.round(crop.growthProgress)}%</span>
                 </div>
-                <Progress value={growthProgress} className="h-2" />
+                <Progress value={crop.growthProgress} className="h-2" />
               </div>
 
               {/* Health */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-1">
-                    <Heart className={`h-4 w-4 ${getHealthColor(health)}`} />
+                    <Heart className={`h-4 w-4 ${getHealthColor(crop.health)}`} />
                     <span className="font-medium">Health</span>
                   </div>
-                  <span className={`text-xs font-semibold ${getHealthColor(health)}`}>
-                    {Math.round(health)}%
+                  <span className={`text-xs font-semibold ${getHealthColor(crop.health)}`}>
+                    {Math.round(crop.health)}%
                   </span>
                 </div>
-                <Progress value={health} className="h-2" />
+                <Progress value={crop.health} className="h-2" />
               </div>
 
               {/* Water Level */}
@@ -114,21 +103,9 @@ export function FarmDisplay({ crops, gameStatus }: FarmDisplayProps) {
                     <Droplets className="h-4 w-4 text-blue-500" />
                     <span className="font-medium">Water</span>
                   </div>
-                  <span className="text-xs text-gray-500">{Math.round(water)}%</span>
+                  <span className="text-xs text-gray-500">{Math.round(crop.waterLevel)}%</span>
                 </div>
-                <Progress value={water} className="h-2" />
-              </div>
-
-              {/* Nutrients */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-1">
-                    <Leaf className="h-4 w-4 text-green-500" />
-                    <span className="font-medium">Nutrients</span>
-                  </div>
-                  <span className="text-xs text-gray-500">{Math.round(nutrient)}%</span>
-                </div>
-                <Progress value={nutrient} className="h-2" />
+                <Progress value={crop.waterLevel} className="h-2" />
               </div>
 
               {/* Disease Risk */}
@@ -136,10 +113,22 @@ export function FarmDisplay({ crops, gameStatus }: FarmDisplayProps) {
                 <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                   <span className="text-xs text-red-700">
-                    Disease risk: {Math.round(diseaseRisk)}%
+                    High disease risk: {Math.round(crop.diseaseRisk)}%
                   </span>
                 </div>
               )}
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                <div className="text-xs">
+                  <span className="text-gray-500">NDVI Score</span>
+                  <p className="font-semibold text-sm">{crop.ndviScore.toFixed(2)}</p>
+                </div>
+                <div className="text-xs">
+                  <span className="text-gray-500">Est. Yield</span>
+                  <p className="font-semibold text-sm">{crop.estimatedYield.toFixed(1)} kg</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         );

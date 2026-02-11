@@ -46,7 +46,7 @@ export function GameActions({
   const canWater = resources.water >= 10;
   const canFertilize = resources.fertilizer >= 5;
   const canTreat = resources.gold >= 50;
-  const canHarvest = (crop.health_score || 0) >= 70 && crop.harvested !== true;
+  const canHarvest = crop.growthProgress >= 80 && crop.status !== 'harvested';
 
   return (
     <Card>
