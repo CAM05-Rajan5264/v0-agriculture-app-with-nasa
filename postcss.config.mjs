@@ -6,6 +6,3 @@ const config = {
 }
 
 export default config
-
-// Note: Tailwind CSS v4 requires @tailwindcss/postcss in devDependencies
-// and is used as the primary PostCSS plugin
