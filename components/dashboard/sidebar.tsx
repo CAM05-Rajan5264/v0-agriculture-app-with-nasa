@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Activity,
   BarChart3,
-  Gamepad2,
 } from "lucide-react"
 
 const navigation = [
@@ -34,7 +33,6 @@ const navigation = [
   { name: "Yield Forecast", href: "/dashboard/yield-forecast", icon: BarChart3 },
   { name: "Satellite", href: "/dashboard/satellite", icon: Satellite },
   { name: "Disease Detection", href: "/dashboard/disease-detection", icon: AlertCircle },
-  { name: "Farm Game", href: "/dashboard/game", icon: Gamepad2 },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
