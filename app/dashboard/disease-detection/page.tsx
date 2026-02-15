@@ -332,9 +332,6 @@ export default function DiseaseDetectionPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        )}
-            </CardContent>
             </Card>
           </div>
         )}

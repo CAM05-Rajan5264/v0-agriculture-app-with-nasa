@@ -39,21 +39,21 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
 
-    // Use Plant.id API (free, powerful plant disease detection)
-    const plantIdApiKey = process.env.PLANTID_API_KEY;
+    // Use Kindwise crop.health API for disease detection
+    const kindwiseApiKey = "955hLSeCk9nE5oma1suyb4rLmPz2D8ew0wp26XM1dFsPZp4bwG";
     
-    if (plantIdApiKey) {
+    if (kindwiseApiKey) {
       try {
-        console.log("[v0] Starting disease analysis with Plant.id API...");
-        analysisResult = await analyzeWithPlantId(base64Image, plantIdApiKey);
-        console.log("[v0] Analysis complete via Plant.id API");
+        console.log("[v0] Starting disease analysis with Kindwise API...");
+        analysisResult = await analyzeWithKindwise(base64Image, kindwiseApiKey, cropType);
+        console.log("[v0] Analysis complete via Kindwise API");
       } catch (apiError) {
-        console.error("[v0] Plant.id API error:", apiError);
+        console.error("[v0] Kindwise API error:", apiError);
         console.log("[v0] Falling back to local analysis...");
         analysisResult = await performLocalAnalysis(base64Image);
       }
     } else {
-      console.log("[v0] No Plant.id API key configured, using local analysis");
+      console.log("[v0] No Kindwise API key configured, using local analysis");
       analysisResult = await performLocalAnalysis(base64Image);
     }
 
@@ -96,224 +96,163 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function analyzeWithPlantId(base64Image: string, apiKey: string) {
-  console.log("[v0] Sending image to Plant.id API...");
+async function analyzeWithKindwise(base64Image: string, apiKey: string, cropType?: string) {
+  console.log("[v0] Sending image to Kindwise API...");
+  
+  if (!apiKey || apiKey.trim() === '') {
+    console.log("[v0] Kindwise API key is empty, skipping API call");
+    throw new Error("API key not configured");
+  }
   
   // Remove data URL prefix to get just base64
   const base64Data = base64Image.split(",")[1] || base64Image;
   
   try {
-    const response = await fetch("https://api.plant.id/v3/identification", {
+    const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Api-Key": apiKey,
+        "Api-Key": apiKey.trim(),
       },
       body: JSON.stringify({
         images: [base64Data],
-        similar_images: true,
         details: [
-          "common_names",
-          "url",
+          "treatment",
           "description",
+          "severity",
+          "symptoms",
           "taxonomy",
-          "image_classification",
+          "url",
         ],
+        ...(cropType && { crop_type: cropType }),
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[v0] Plant.id API error:", response.status, errorText);
-      throw new Error(`Plant.id API error: ${response.status}`);
+      console.error("[v0] Kindwise API error:", response.status, errorText);
+      throw new Error(`Kindwise API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("[v0] Plant.id API response received");
+    console.log("[v0] Kindwise API response received");
 
-    // Parse Plant.id response
-    return mapPlantIdResponse(data);
+    // Parse Kindwise response
+    return mapKindwiseResponse(data);
   } catch (error) {
-    console.error("[v0] Plant.id API call failed:", error);
+    console.error("[v0] Kindwise API call failed:", error);
     throw error;
   }
 }
 
-function mapPlantIdResponse(plantIdData: any) {
+function mapKindwiseResponse(kindwiseData: any) {
   try {
-    const results = plantIdData.results || [];
+    const suggestions = kindwiseData.suggestions || [];
     
-    if (!results || results.length === 0) {
+    if (!suggestions || suggestions.length === 0) {
       return {
-        disease: "Unable to identify plant",
+        disease: "Unable to identify issue",
         confidence: 0.5,
         severity: "mild" as const,
         symptoms: ["No clear identification"],
-        treatment: "Please provide a clearer image of the affected area",
+        treatment: "Please provide a clearer image",
         urgency: "low" as const,
         recommendations: [
-          "Take a clear photo in natural daylight",
-          "Focus on the affected leaf or plant part",
-          "Ensure good image contrast and focus",
+          "Take a clearer photo with better lighting",
+          "Focus on affected area",
+          "Include the whole leaf or plant part",
         ],
         isDisease: false,
       };
     }
 
-    const topResult = results[0];
-    const probability = topResult.probability || 0.7;
-    const commonNames = topResult.common_names || [];
-    const plantName = commonNames[0] || topResult.name || "Unknown Plant";
+    const topSuggestion = suggestions[0];
+    const isHealthy = topSuggestion.id === "healthy" || 
+                      (topSuggestion.name && topSuggestion.name.toLowerCase().includes("healthy"));
     
-    // Check image classification for disease detection
-    const imageClassification = topResult.image_classification || {};
-    const isDiseased = imageClassification.is_plant_diseased?.[0] === true || false;
-    const diseases = imageClassification.disease || [];
-    
-    // If diseased, extract disease info
-    if (isDiseased && diseases.length > 0) {
-      const topDisease = diseases[0];
-      const diseaseName = topDisease.name || "Unknown Disease";
-      const diseaseConfidence = topDisease.probability || probability;
-      
+    const details = topSuggestion.details || {};
+    const severity = details.severity?.toLowerCase() || "mild";
+    const confidence = topSuggestion.probability || topSuggestion.score || 0.8;
+    const commonName = topSuggestion.name || "Unknown";
+
+    if (isHealthy) {
       return {
-        disease: `${diseaseName} on ${plantName}`,
-        confidence: Math.min(0.95, diseaseConfidence),
-        severity: estimateSeverity(diseaseName),
-        symptoms: extractSymptoms(diseaseName),
-        treatment: generateTreatment(diseaseName),
-        urgency: estimateUrgency(diseaseName),
-        recommendations: generateDiseaseRecommendations(diseaseName),
-        isDisease: true,
+        disease: `${commonName} - Healthy Plant`,
+        confidence: Math.min(0.99, Math.max(0.7, confidence)),
+        severity: "mild" as const,
+        symptoms: ["No disease detected", "Plant appears healthy"],
+        treatment: "Continue regular maintenance and monitoring",
+        urgency: "low" as const,
+        recommendations: [
+          "Maintain consistent watering schedule",
+          "Provide appropriate light conditions",
+          "Monitor regularly for any changes",
+        ],
+        isDisease: false,
       };
     }
-    
-    // Plant is healthy
+
+    // Disease detected
     return {
-      disease: `${plantName} - Healthy Plant`,
-      confidence: Math.min(0.95, probability),
-      severity: "mild" as const,
-      symptoms: ["No disease detected", "Plant appears healthy"],
-      treatment: "Continue regular maintenance and monitoring",
-      urgency: "low" as const,
-      recommendations: [
-        "Maintain consistent watering schedule",
-        "Provide appropriate light conditions",
-        "Monitor regularly for any changes",
-        "Ensure proper nutrition through fertilizer",
-      ],
-      isDisease: false,
+      disease: commonName,
+      confidence: Math.min(0.99, Math.max(0.5, confidence)),
+      severity: (severity as any) || "mild",
+      symptoms: details.symptoms ? (Array.isArray(details.symptoms) ? details.symptoms : [details.symptoms]) : [],
+      treatment: details.treatment || "Consult with an agronomist for proper treatment",
+      urgency: getSeverityUrgency(severity),
+      recommendations: generateRecommendations(commonName, details.treatment),
+      isDisease: true,
     };
   } catch (error) {
-    console.error("[v0] Error parsing Plant.id response:", error);
+    console.error("[v0] Error parsing Kindwise response:", error);
     throw error;
   }
 }
 
-function estimateSeverity(diseaseName: string): "mild" | "moderate" | "severe" | "critical" {
-  const name = diseaseName.toLowerCase();
-  
-  if (name.includes("wilt") || name.includes("blight") || name.includes("canker")) {
-    return "severe";
-  }
-  if (name.includes("rust") || name.includes("mildew") || name.includes("spot")) {
-    return "moderate";
-  }
-  return "mild";
+function getSeverityUrgency(severity: string): "low" | "medium" | "high" | "critical" {
+  const severityMap: Record<string, "low" | "medium" | "high" | "critical"> = {
+    mild: "low",
+    moderate: "medium",
+    severe: "high",
+    critical: "critical",
+  };
+  return severityMap[severity.toLowerCase()] || "medium";
 }
 
-function extractSymptoms(diseaseName: string): string[] {
-  const name = diseaseName.toLowerCase();
-  const symptoms: string[] = [];
-  
-  if (name.includes("rust")) {
-    symptoms.push("Rust-colored pustules on leaves", "Yellow discoloration", "Orange/brown spots");
-  } else if (name.includes("mildew")) {
-    symptoms.push("White powdery coating", "Leaf curling", "Growth stunting");
-  } else if (name.includes("blight")) {
-    symptoms.push("Brown/dark spots on leaves", "Yellowing", "Rapid spread");
-  } else if (name.includes("spot")) {
-    symptoms.push("Dark spots with halos", "Progressive spotting", "Leaf yellowing");
-  } else if (name.includes("wilt")) {
-    symptoms.push("Drooping leaves", "Wilting despite moisture", "Plant decline");
-  } else if (name.includes("rot")) {
-    symptoms.push("Soft, mushy tissue", "Discoloration", "Foul smell");
-  } else {
-    symptoms.push("Visible disease symptoms detected", "Plant health compromised");
-  }
-  
-  return symptoms;
-}
-
-function generateTreatment(diseaseName: string): string {
-  const name = diseaseName.toLowerCase();
-  
-  if (name.includes("rust") || name.includes("mildew")) {
-    return "Apply sulfur or copper fungicide. Improve air circulation and reduce humidity. Remove affected leaves and increase plant spacing.";
-  }
-  if (name.includes("blight") || name.includes("spot")) {
-    return "Apply copper or chlorothalonil fungicide. Remove and destroy infected plant parts. Avoid overhead watering and improve air circulation.";
-  }
-  if (name.includes("wilt")) {
-    return "Improve soil drainage and reduce watering frequency. Apply systemic fungicide if available. Consider replanting if severely affected.";
-  }
-  if (name.includes("rot")) {
-    return "Remove affected plant parts immediately. Improve drainage and reduce watering. Ensure good air circulation around the plant.";
-  }
-  if (name.includes("pest") || name.includes("insect")) {
-    return "Apply appropriate insecticide following product directions. Remove heavily infested areas. Monitor for further infestation.";
-  }
-  
-  return "Consult with a local agricultural specialist for proper diagnosis and treatment recommendations.";
-}
-
-function estimateUrgency(diseaseName: string): "low" | "medium" | "high" | "critical" {
-  const name = diseaseName.toLowerCase();
-  
-  if (name.includes("wilt") || name.includes("blight") || name.includes("canker")) {
-    return "critical";
-  }
-  if (name.includes("rust") || name.includes("mildew")) {
-    return "high";
-  }
-  if (name.includes("spot") || name.includes("rot")) {
-    return "medium";
-  }
-  return "low";
-}
-
-function generateDiseaseRecommendations(diseaseName: string): string[] {
+function generateRecommendations(diseaseName: string, treatment: string): string[] {
   const recommendations: string[] = [];
-  const name = diseaseName.toLowerCase();
+
+  if (treatment) {
+    recommendations.push(treatment);
+  }
+
+  // Add standard recommendations based on disease type
+  const name = diseaseName?.toLowerCase() || "";
   
-  if (name.includes("fungal") || name.includes("mildew") || name.includes("rust")) {
-    recommendations.push("Apply fungicide immediately");
+  if (name.includes("fungal") || name.includes("mildew")) {
+    recommendations.push("Improve air circulation and reduce humidity");
     recommendations.push("Remove and destroy infected plant parts");
-    recommendations.push("Improve air circulation");
-    recommendations.push("Reduce leaf wetness and humidity");
+    recommendations.push("Apply fungicide if recommended");
   } else if (name.includes("bacterial")) {
-    recommendations.push("Sterilize all pruning tools");
+    recommendations.push("Sterilize pruning tools between cuts");
     recommendations.push("Remove infected plant parts");
     recommendations.push("Avoid watering leaves");
-    recommendations.push("Apply copper-based bactericide if available");
   } else if (name.includes("wilt") || name.includes("blight")) {
-    recommendations.push("Remove severely affected areas immediately");
-    recommendations.push("Improve soil drainage");
+    recommendations.push("Check and improve soil drainage");
     recommendations.push("Reduce watering frequency");
-    recommendations.push("Consider replanting if extensively affected");
+    recommendations.push("Consider replanting if severe");
   } else if (name.includes("pest") || name.includes("insect")) {
-    recommendations.push("Apply appropriate insecticide");
+    recommendations.push("Apply appropriate insecticide if available");
     recommendations.push("Remove heavily infested plant parts");
-    recommendations.push("Monitor closely for further infestation");
-    recommendations.push("Consider neem oil or organic alternatives");
+    recommendations.push("Monitor for further spread");
   }
-  
+
   if (recommendations.length === 0) {
     recommendations.push("Monitor the affected plant closely");
     recommendations.push("Provide optimal growing conditions");
     recommendations.push("Consult with local agricultural extension");
   }
-  
+
   return recommendations;
 }
 
@@ -338,55 +277,92 @@ async function performLocalAnalysis(base64Image: string) {
 }
 
 function analyzeImageBuffer(buffer: Buffer) {
-  // Analyze JPEG/PNG header and byte distribution for disease patterns
-  // We'll use byte distribution heuristics since we can't decode the full image
+  // Analyze image byte distribution for disease patterns
+  // This is a heuristic analysis of the encoded image data
   
-  let darkPixelCount = 0;
-  let brightPixelCount = 0;
-  let colorfulPixelCount = 0;
+  let veryDarkCount = 0;   // < 50 (very dark: black, dark brown)
+  let darkCount = 0;       // 50-100 (dark: brown spots)
+  let midCount = 0;        // 100-150 (mid: greens, grays)
+  let brightCount = 0;     // 150-200 (bright: yellows, light areas)
+  let veryBrightCount = 0; // > 200 (very bright: white, bleached)
   let totalAnalyzedBytes = 0;
 
-  // Analyze the image data bytes to detect color patterns
-  // Skip the header (first 100 bytes for JPEG, varies for PNG)
-  const startOffset = Math.min(100, buffer.length);
+  // Analyze byte distribution across the image
+  // Skip header bytes (typically first 100-500 bytes for JPEG/PNG)
+  let startOffset = 100;
   
-  for (let i = startOffset; i < Math.min(buffer.length, startOffset + 2000); i++) {
+  // Try to find the actual image data start
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8) { // JPEG
+    startOffset = 500; // JPEG headers can be longer
+  } else if (buffer[0] === 0x89 && buffer[1] === 0x50) { // PNG
+    startOffset = 200;
+  }
+
+  // Sample bytes throughout the image for better distribution
+  const step = Math.max(1, Math.floor((buffer.length - startOffset) / 1000));
+  
+  for (let i = startOffset; i < buffer.length; i += step) {
     const byte = buffer[i] || 0;
     totalAnalyzedBytes++;
 
-    // Byte value distribution heuristics
-    if (byte < 80) darkPixelCount++;        // Dark areas (brown, black)
-    if (byte > 180) brightPixelCount++;     // Bright areas (white, yellow)
-    if (byte > 90 && byte < 180) colorfulPixelCount++; // Mid-range (green, colors)
+    if (byte < 50) veryDarkCount++;
+    else if (byte < 100) darkCount++;
+    else if (byte < 150) midCount++;
+    else if (byte < 200) brightCount++;
+    else veryBrightCount++;
   }
 
-  const darkRatio = totalAnalyzedBytes > 0 ? darkPixelCount / totalAnalyzedBytes : 0;
-  const brightRatio = totalAnalyzedBytes > 0 ? brightPixelCount / totalAnalyzedBytes : 0;
-  const colorRatio = totalAnalyzedBytes > 0 ? colorfulPixelCount / totalAnalyzedBytes : 0;
+  // Normalize ratios
+  const total = Math.max(1, totalAnalyzedBytes);
+  const veryDarkRatio = veryDarkCount / total;
+  const darkRatio = darkCount / total;
+  const midRatio = midCount / total;
+  const brightRatio = brightCount / total;
+  const veryBrightRatio = veryBrightCount / total;
 
-  return {
-    darkRatio,      // Brown/black spots (disease indicator)
-    brightRatio,    // Yellowing/discoloration
-    colorRatio,     // Normal green coloration
-    yellowRatio: brightRatio * 0.6,  // Estimate yellow from bright areas
-    brownRatio: darkRatio * 0.4,      // Estimate brown from dark areas
-    greenRatio: colorRatio * 0.5,     // Estimate green from color areas
-    redRatio: (darkRatio + brightRatio) * 0.2, // Estimate red tones
+  // Calculate disease indicators based on byte distribution
+  const diseaseIndicators = {
+    // Higher dark + very dark suggests spots/lesions
+    spotIndicator: (veryDarkRatio + darkRatio),
+    // Higher bright + very bright suggests yellowing or bleaching
+    yellowingIndicator: (brightRatio + veryBrightRatio),
+    // Mid-range suggests normal healthy green foliage
+    healthyIndicator: midRatio,
+    // Uneven distribution suggests disease
+    diseaseLikelihood: Math.abs((veryDarkRatio + darkRatio) - (brightRatio + veryBrightRatio)),
+    
+    veryDarkRatio,
+    darkRatio,
+    midRatio,
+    brightRatio,
+    veryBrightRatio,
   };
+
+  return diseaseIndicators;
 }
 
 function generateDiseaseReport(indicators: Record<string, number>) {
-  const { yellowRatio, brownRatio, greenRatio, redRatio, darkRatio, colorRatio } = indicators;
+  const { 
+    spotIndicator, 
+    yellowingIndicator, 
+    healthyIndicator, 
+    diseaseLikelihood,
+    veryDarkRatio,
+    darkRatio,
+    midRatio,
+    brightRatio,
+    veryBrightRatio
+  } = indicators;
 
-  console.log("[v0] Disease indicators - Green:", greenRatio, "Yellow:", yellowRatio, "Brown:", brownRatio, "Red:", redRatio, "Dark:", darkRatio, "Color:", colorRatio);
+  console.log("[v0] Disease indicators - Spot:", spotIndicator.toFixed(3), "Yellowing:", yellowingIndicator.toFixed(3), "Healthy:", healthyIndicator.toFixed(3), "Likelihood:", diseaseLikelihood.toFixed(3));
 
-  // Decision logic based on color ratios - more lenient thresholds
-  if (greenRatio > 0.3 && yellowRatio < 0.15 && brownRatio < 0.1) {
+  // If mostly mid-range bytes and low disease likelihood, plant is healthy
+  if (healthyIndicator > 0.35 && diseaseLikelihood < 0.2) {
     return {
       disease: "Plant Appears Healthy",
-      confidence: 0.80,
+      confidence: 0.85,
       severity: "mild" as const,
-      symptoms: ["Green foliage", "Normal coloration"],
+      symptoms: ["Green foliage", "Normal coloration", "No visible spots or lesions"],
       treatment: "Continue regular maintenance and monitoring",
       urgency: "low" as const,
       recommendations: ["Maintain watering schedule", "Monitor for any changes", "Continue preventive care"],
@@ -394,95 +370,95 @@ function generateDiseaseReport(indicators: Record<string, number>) {
     };
   }
 
-  // Check for brown/yellow combination (blight/spot)
-  if (yellowRatio > 0.15 && brownRatio > 0.08) {
+  // High spot indicator + high yellowing = blight/leaf spot
+  if (spotIndicator > 0.25 && yellowingIndicator > 0.15) {
     return {
       disease: "Possible Blight or Leaf Spot Disease",
-      confidence: 0.70,
+      confidence: 0.72,
       severity: "moderate" as const,
       symptoms: ["Yellowing leaves", "Brown or dark spots", "Progressive damage visible"],
-      treatment: "Apply fungicide treatment, remove affected leaves, improve air circulation",
+      treatment: "Apply fungicide treatment (copper or mancozeb), remove affected leaves, improve air circulation",
       urgency: "high" as const,
       recommendations: [
         "Remove all affected leaves immediately",
-        "Apply fungicide (copper or mancozeb) every 7 days",
+        "Apply fungicide every 7-10 days",
         "Improve plant spacing for air flow",
-        "Water only at soil level",
+        "Water only at soil level to keep foliage dry",
       ],
       isDisease: true,
     };
   }
 
-  // Check for rust/red spots
-  if (redRatio > 0.15) {
+  // High dark ratio with even distribution = rust spots
+  if (darkRatio > 0.20 && spotIndicator > 0.2) {
     return {
-      disease: "Possible Rust or Red Spot Disease",
-      confidence: 0.68,
+      disease: "Possible Rust or Fungal Spots",
+      confidence: 0.70,
       severity: "moderate" as const,
-      symptoms: ["Reddish or rust-colored spots", "Leaf discoloration", "Visible pustules"],
+      symptoms: ["Rust-colored or brown spots", "Pustules on leaf undersides", "Leaf discoloration"],
       treatment: "Apply sulfur or copper fungicide spray",
       urgency: "medium" as const,
       recommendations: [
         "Apply fungicide spray immediately",
         "Remove severely infected leaves",
-        "Ensure good ventilation",
+        "Ensure good ventilation around plant",
         "Monitor affected areas daily",
       ],
       isDisease: true,
     };
   }
 
-  // Check for overall discoloration (viral/systemic)
-  if (darkRatio > 0.25 && colorRatio < 0.3) {
+  // High bright ratio = yellowing/bleaching
+  if (veryBrightRatio > 0.20 || brightRatio > 0.25) {
     return {
-      disease: "Plant Shows Signs of Stress or Disease",
-      confidence: 0.70,
+      disease: "Possible Powdery Mildew or Yellowing Disease",
+      confidence: 0.68,
       severity: "moderate" as const,
-      symptoms: ["Abnormal coloration", "Leaf discoloration patterns", "Overall plant stress"],
-      treatment: "Improve growing conditions and apply targeted treatment based on specific symptoms",
+      symptoms: ["Leaf yellowing", "White coating or bleached areas", "Reduced photosynthesis"],
+      treatment: "Apply neem oil or sulfur-based fungicide",
       urgency: "medium" as const,
       recommendations: [
-        "Assess soil moisture and drainage",
-        "Check for pest infestations",
-        "Adjust watering and fertilization",
-        "Consult with agricultural specialist",
+        "Spray with fungicide (sulfur or neem oil)",
+        "Improve air circulation",
+        "Reduce humidity levels",
+        "Remove heavily infected leaves",
       ],
       isDisease: true,
     };
   }
 
-  // Default: assume some disease present if any concerning signs
-  if (yellowRatio > 0.08 || brownRatio > 0.05 || redRatio > 0.08) {
+  // Uneven distribution with moderate spot indicator = stress/disease
+  if (diseaseLikelihood > 0.25 && (veryDarkRatio > 0.15 || spotIndicator > 0.18)) {
     return {
-      disease: "Minor Disease Symptoms Detected",
-      confidence: 0.65,
+      disease: "Plant Shows Signs of Stress or Early Disease",
+      confidence: 0.67,
       severity: "mild" as const,
-      symptoms: ["Slight discoloration", "Minor spots visible", "Early disease signs"],
+      symptoms: ["Some discoloration", "Minor spots visible", "Early disease signs"],
       treatment: "Monitor closely and apply preventive fungicide if symptoms worsen",
-      urgency: "low" as const,
+      urgency: "medium" as const,
       recommendations: [
-        "Monitor plant daily for progression",
-        "Apply preventive fungicide spray",
-        "Maintain optimal growing conditions",
-        "Remove any severely affected leaves",
+        "Monitor plant closely daily",
+        "Apply preventive fungicide if needed",
+        "Improve growing conditions",
+        "Check irrigation and drainage",
       ],
       isDisease: true,
     };
   }
 
-  // Default: healthy plant
+  // Default: assume healthy if no strong indicators
   return {
-    disease: "Plant Appears Healthy",
-    confidence: 0.75,
+    disease: "Plant Status: Inconclusive",
+    confidence: 0.60,
     severity: "mild" as const,
-    symptoms: ["Normal plant appearance", "Good foliage color"],
-    treatment: "Continue regular maintenance and monitoring",
+    symptoms: ["Image quality affects analysis"],
+    treatment: "For best results, photograph affected leaf area in good lighting",
     urgency: "low" as const,
     recommendations: [
-      "Maintain regular watering schedule",
-      "Apply preventive care measures",
-      "Monitor for any changes",
-      "Keep area clean and weed-free",
+      "Take a clearer photo with better lighting",
+      "Focus on affected leaf area",
+      "Include entire leaf in frame",
+      "Try uploading again with a better image",
     ],
     isDisease: false,
   };
