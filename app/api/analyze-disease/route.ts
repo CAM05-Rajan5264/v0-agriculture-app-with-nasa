@@ -1,7 +1,8 @@
+import { generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 60; // Allow up to 60 seconds for analysis
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,23 +38,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log("[v0] Starting AI-powered disease analysis...");
     let analysisResult;
 
-    // Use Kindwise crop.health API for disease detection
-    const kindwiseApiKey = "955hLSeCk9nE5oma1suyb4rLmPz2D8ew0wp26XM1dFsPZp4bwG";
-    
-    if (kindwiseApiKey) {
-      try {
-        console.log("[v0] Starting disease analysis with Kindwise API...");
-        analysisResult = await analyzeWithKindwise(base64Image, kindwiseApiKey, cropType);
-        console.log("[v0] Analysis complete via Kindwise API");
-      } catch (apiError) {
-        console.error("[v0] Kindwise API error:", apiError);
-        console.log("[v0] Falling back to local analysis...");
-        analysisResult = await performLocalAnalysis(base64Image);
-      }
-    } else {
-      console.log("[v0] No Kindwise API key configured, using local analysis");
+    try {
+      // Use AI to analyze the image with free model
+      analysisResult = await analyzeWithAI(base64Image, cropType);
+      console.log("[v0] Analysis complete via AI");
+    } catch (aiError) {
+      console.error("[v0] AI analysis error:", aiError);
+      console.log("[v0] Falling back to local analysis...");
       analysisResult = await performLocalAnalysis(base64Image);
     }
 
@@ -96,165 +90,78 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function analyzeWithKindwise(base64Image: string, apiKey: string, cropType?: string) {
-  console.log("[v0] Sending image to Kindwise API...");
-  
-  if (!apiKey || apiKey.trim() === '') {
-    console.log("[v0] Kindwise API key is empty, skipping API call");
-    throw new Error("API key not configured");
-  }
-  
-  // Remove data URL prefix to get just base64
-  const base64Data = base64Image.split(",")[1] || base64Image;
-  
+async function analyzeWithAI(base64Image: string, cropType?: string) {
+  console.log("[v0] Using AI to analyze crop disease...");
+
   try {
-    const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": apiKey.trim(),
-      },
-      body: JSON.stringify({
-        images: [base64Data],
-        details: [
-          "treatment",
-          "description",
-          "severity",
-          "symptoms",
-          "taxonomy",
-          "url",
-        ],
-        ...(cropType && { crop_type: cropType }),
-      }),
+    // Create a detailed prompt for disease analysis
+    const prompt = `You are an expert agricultural pathologist. Analyze this crop image for diseases and health status.
+
+${cropType ? `The crop type is: ${cropType}` : ""}
+
+IMPORTANT: Respond with ONLY a valid JSON object (no markdown, no extra text) in this exact format:
+{
+  "disease": "Disease name or 'Healthy Plant'",
+  "confidence": 0.85,
+  "severity": "mild|moderate|severe|critical",
+  "symptoms": ["symptom1", "symptom2"],
+  "treatment": "Treatment recommendation",
+  "urgency": "low|medium|high|critical",
+  "recommendations": ["action1", "action2"],
+  "isDisease": true|false
+}
+
+Analyze the image and provide the JSON response only.`;
+
+    const result = await generateText({
+      model: "openai/gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              image: base64Image,
+            },
+            {
+              type: "text",
+              text: prompt,
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+      maxTokens: 500,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[v0] Kindwise API error:", response.status, errorText);
-      throw new Error(`Kindwise API error: ${response.status} - ${errorText}`);
+    console.log("[v0] AI response:", result.text);
+
+    // Parse the JSON response
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Invalid response format from AI");
     }
 
-    const data = await response.json();
-    console.log("[v0] Kindwise API response received");
+    const analysis = JSON.parse(jsonMatch[0]);
 
-    // Parse Kindwise response
-    return mapKindwiseResponse(data);
-  } catch (error) {
-    console.error("[v0] Kindwise API call failed:", error);
-    throw error;
-  }
-}
-
-function mapKindwiseResponse(kindwiseData: any) {
-  try {
-    const suggestions = kindwiseData.suggestions || [];
-    
-    if (!suggestions || suggestions.length === 0) {
-      return {
-        disease: "Unable to identify issue",
-        confidence: 0.5,
-        severity: "mild" as const,
-        symptoms: ["No clear identification"],
-        treatment: "Please provide a clearer image",
-        urgency: "low" as const,
-        recommendations: [
-          "Take a clearer photo with better lighting",
-          "Focus on affected area",
-          "Include the whole leaf or plant part",
-        ],
-        isDisease: false,
-      };
-    }
-
-    const topSuggestion = suggestions[0];
-    const isHealthy = topSuggestion.id === "healthy" || 
-                      (topSuggestion.name && topSuggestion.name.toLowerCase().includes("healthy"));
-    
-    const details = topSuggestion.details || {};
-    const severity = details.severity?.toLowerCase() || "mild";
-    const confidence = topSuggestion.probability || topSuggestion.score || 0.8;
-    const commonName = topSuggestion.name || "Unknown";
-
-    if (isHealthy) {
-      return {
-        disease: `${commonName} - Healthy Plant`,
-        confidence: Math.min(0.99, Math.max(0.7, confidence)),
-        severity: "mild" as const,
-        symptoms: ["No disease detected", "Plant appears healthy"],
-        treatment: "Continue regular maintenance and monitoring",
-        urgency: "low" as const,
-        recommendations: [
-          "Maintain consistent watering schedule",
-          "Provide appropriate light conditions",
-          "Monitor regularly for any changes",
-        ],
-        isDisease: false,
-      };
-    }
-
-    // Disease detected
+    // Validate and normalize the response
     return {
-      disease: commonName,
-      confidence: Math.min(0.99, Math.max(0.5, confidence)),
-      severity: (severity as any) || "mild",
-      symptoms: details.symptoms ? (Array.isArray(details.symptoms) ? details.symptoms : [details.symptoms]) : [],
-      treatment: details.treatment || "Consult with an agronomist for proper treatment",
-      urgency: getSeverityUrgency(severity),
-      recommendations: generateRecommendations(commonName, details.treatment),
-      isDisease: true,
+      disease: analysis.disease || "Unknown",
+      confidence: Math.min(0.99, Math.max(0.5, Number(analysis.confidence) || 0.7)),
+      severity: (analysis.severity || "mild") as "mild" | "moderate" | "severe" | "critical",
+      symptoms: Array.isArray(analysis.symptoms) ? analysis.symptoms : [],
+      treatment: analysis.treatment || "Consult with an agricultural specialist",
+      urgency: (analysis.urgency || "low") as "low" | "medium" | "high" | "critical",
+      recommendations: Array.isArray(analysis.recommendations) ? analysis.recommendations : [],
+      isDisease: Boolean(analysis.isDisease),
     };
   } catch (error) {
-    console.error("[v0] Error parsing Kindwise response:", error);
+    console.error("[v0] AI analysis failed:", error);
     throw error;
   }
 }
 
-function getSeverityUrgency(severity: string): "low" | "medium" | "high" | "critical" {
-  const severityMap: Record<string, "low" | "medium" | "high" | "critical"> = {
-    mild: "low",
-    moderate: "medium",
-    severe: "high",
-    critical: "critical",
-  };
-  return severityMap[severity.toLowerCase()] || "medium";
-}
 
-function generateRecommendations(diseaseName: string, treatment: string): string[] {
-  const recommendations: string[] = [];
-
-  if (treatment) {
-    recommendations.push(treatment);
-  }
-
-  // Add standard recommendations based on disease type
-  const name = diseaseName?.toLowerCase() || "";
-  
-  if (name.includes("fungal") || name.includes("mildew")) {
-    recommendations.push("Improve air circulation and reduce humidity");
-    recommendations.push("Remove and destroy infected plant parts");
-    recommendations.push("Apply fungicide if recommended");
-  } else if (name.includes("bacterial")) {
-    recommendations.push("Sterilize pruning tools between cuts");
-    recommendations.push("Remove infected plant parts");
-    recommendations.push("Avoid watering leaves");
-  } else if (name.includes("wilt") || name.includes("blight")) {
-    recommendations.push("Check and improve soil drainage");
-    recommendations.push("Reduce watering frequency");
-    recommendations.push("Consider replanting if severe");
-  } else if (name.includes("pest") || name.includes("insect")) {
-    recommendations.push("Apply appropriate insecticide if available");
-    recommendations.push("Remove heavily infested plant parts");
-    recommendations.push("Monitor for further spread");
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push("Monitor the affected plant closely");
-    recommendations.push("Provide optimal growing conditions");
-    recommendations.push("Consult with local agricultural extension");
-  }
-
-  return recommendations;
-}
 
 
 
