@@ -9,13 +9,13 @@ The disease detection feature was showing "temporarily unavailable" messages bec
 
 ### 1. ✅ Supabase Client Async/Await
 **File**: `/app/api/analyze-disease/route.ts` (Line 30)
-```typescript
+\`\`\`typescript
 // Before:
 const supabase = createClient();
 
 // After:
 const supabase = await createClient();
-```
+\`\`\`
 The `createClient()` function returns a Promise and must be awaited.
 
 ### 2. ✅ Environment Variable Handling

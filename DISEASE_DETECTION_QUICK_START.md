@@ -36,7 +36,7 @@ Each analysis includes:
 
 The system uses a **smart fallback architecture**:
 
-```
+\`\`\`
 1. Check for Kindwise API Key (Advanced AI, optional paid upgrade)
    ↓
 2. If not available → Use FREE Local Pixel Analysis
@@ -44,7 +44,7 @@ The system uses a **smart fallback architecture**:
    • Works 100% OFFLINE
    • No internet required
    • No rate limits
-```
+\`\`\`
 
 ## Free Analysis Method
 
@@ -117,17 +117,17 @@ All analysis data is stored in your Supabase database:
 - **Cost:** FREE
 
 ### Request Format
-```json
+\`\`\`json
 {
   "base64Image": "data:image/jpeg;base64,...",
   "cropType": "Tomato",
   "farmId": "optional_farm_id",
   "cropId": "optional_crop_id"
 }
-```
+\`\`\`
 
 ### Response Format
-```json
+\`\`\`json
 {
   "success": true,
   "analysis": {
@@ -142,7 +142,7 @@ All analysis data is stored in your Supabase database:
   },
   "savedRecord": { /* database record */ }
 }
-```
+\`\`\`
 
 ## Next Steps
 

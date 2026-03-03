@@ -30,7 +30,7 @@ Your agriculture app now includes a **fully functional, FREE AI disease detectio
 
 ## Architecture
 
-```
+\`\`\`
 ┌─────────────────────────────────┐
 │  Farmer Uploads Plant Image     │
 └────────────┬────────────────────┘
@@ -73,7 +73,7 @@ Your agriculture app now includes a **fully functional, FREE AI disease detectio
    │  Display Results     │
    │  to User             │
    └──────────────────────┘
-```
+\`\`\`
 
 ## Technical Details
 
@@ -89,7 +89,7 @@ Your agriculture app now includes a **fully functional, FREE AI disease detectio
 
 ### Database Schema
 
-```sql
+\`\`\`sql
 CREATE TABLE disease_detections (
   id UUID PRIMARY KEY,
   user_id UUID NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE disease_detections (
   raw_analysis JSONB,
   created_at TIMESTAMP
 );
-```
+\`\`\`
 
 ### API Endpoint Details
 
@@ -114,17 +114,17 @@ CREATE TABLE disease_detections (
 **Authentication:** Required (Supabase auth)
 
 **Request:**
-```javascript
+\`\`\`javascript
 {
   base64Image: "data:image/jpeg;base64,...",
   cropType?: "Tomato", // optional
   farmId?: "uuid",     // optional
   cropId?: "uuid"      // optional
 }
-```
+\`\`\`
 
 **Response:**
-```javascript
+\`\`\`javascript
 {
   success: true,
   analysis: {
@@ -139,7 +139,7 @@ CREATE TABLE disease_detections (
   },
   savedRecord: { /* database record */ }
 }
-```
+\`\`\`
 
 ## How to Use
 
@@ -153,7 +153,7 @@ CREATE TABLE disease_detections (
 
 ### For Developers
 
-```javascript
+\`\`\`javascript
 // Send image to analysis API
 const response = await fetch('/api/analyze-disease', {
   method: 'POST',
@@ -167,7 +167,7 @@ const response = await fetch('/api/analyze-disease', {
 const { analysis, savedRecord } = await response.json();
 console.log(`Disease: ${analysis.disease}`);
 console.log(`Confidence: ${analysis.confidence * 100}%`);
-```
+\`\`\`
 
 ## Current Capabilities
 

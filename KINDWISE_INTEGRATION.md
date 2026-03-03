@@ -25,9 +25,9 @@ Each disease identification includes:
 ### Step 1: Add API Key to Environment Variables
 1. Go to the **Vars** section in v0 sidebar
 2. Add the following environment variable:
-   ```
+   \`\`\`
    KINDWISE_API_KEY = LUb1izCbjL5YpagT7coo0xddOqkphSJbIPpv89og4DG4K8oBVB
-   ```
+   \`\`\`
    (Or use `CROP_HEALTH_API_KEY` as an alternative variable name)
 
 ### Step 2: Use the Disease Detection Feature
@@ -46,12 +46,12 @@ Each disease identification includes:
 ## Integration Details
 
 ### API Endpoint
-```
+\`\`\`
 POST https://crop.kindwise.com/api/v1/identification
-```
+\`\`\`
 
 ### Request Format
-```json
+\`\`\`json
 {
   "images": ["base64_image_data"],
   "crop_type": "Tomato",  // Optional - improves accuracy
@@ -64,7 +64,7 @@ POST https://crop.kindwise.com/api/v1/identification
     "url"
   ]
 }
-```
+\`\`\`
 
 ### Response Mapping
 The Kindwise API response is automatically mapped to the application's disease analysis format:

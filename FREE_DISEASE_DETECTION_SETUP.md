@@ -8,7 +8,7 @@ This guide explains how to use the AI-powered crop disease detection system with
 
 The disease detection system uses a **layered approach** that automatically falls back to free methods:
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────┐
 │   User Uploads Plant Leaf Image                 │
 └──────────────┬──────────────────────────────────┘
@@ -30,7 +30,7 @@ The disease detection system uses a **layered approach** that automatically fall
 │  - Provides treatment recommendations           │
 │  - Works 100% OFFLINE - No API calls needed     │
 └─────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ## Free Options
 
@@ -72,12 +72,12 @@ Simply upload an image to Disease Detection page. The system will automatically 
 Hugging Face offers free inference API for image classification models.
 
 **Setup:**
-```
+\`\`\`
 1. Create free account at https://huggingface.co
 2. Generate API token from https://huggingface.co/settings/tokens
 3. Add to Vars: HF_API_KEY = your_token
 4. System will automatically switch to Hugging Face API
-```
+\`\`\`
 
 **Models:**
 - `google/vit-base-patch16-224` - Vision Transformer for plant disease classification
@@ -143,7 +143,7 @@ Results include:
 
 ## API Fallback Flow
 
-```javascript
+\`\`\`javascript
 // Current implementation in /app/api/analyze-disease/route.ts
 
 const kindwiseApiKey = process.env.KINDWISE_API_KEY;
@@ -155,7 +155,7 @@ if (kindwiseApiKey) {
   // Use FREE local analysis (instant, offline)
   analysisResult = await performLocalAnalysis(image);
 }
-```
+\`\`\`
 
 ## Improving Local Analysis Accuracy
 
