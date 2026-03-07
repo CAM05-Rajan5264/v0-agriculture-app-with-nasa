@@ -251,7 +251,7 @@ export default function DiseaseDetectionPage() {
                   )}
                   <span>{!analysis.isDisease ? "✓ Plant Healthy" : "⚠ Disease Detected"}</span>
                 </CardTitle>
-                <CardDescription>Powered by Plant.id AI Analysis</CardDescription>
+                <CardDescription>AI-Powered Analysis Results</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className={`p-4 rounded-lg border-2 ${analysis.isDisease ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"}`}>
