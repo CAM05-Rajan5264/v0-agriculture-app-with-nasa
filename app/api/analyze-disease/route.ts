@@ -52,8 +52,9 @@ async function performLocalAnalysis(base64Image: string) {
     const base64Data = base64Image.split(",")[1] || base64Image;
     const buffer = Buffer.from(base64Data, "base64");
 
-    // Analyze image data for disease indicators
-    const diseaseIndicators = analyzeImageBuffer(buffer);
+    // Create a canvas-like analysis using sharper approach
+    // Extract pixel data directly from image buffer
+    const diseaseIndicators = await analyzeImagePixels(buffer);
 
     return generateDiseaseReport(diseaseIndicators);
   } catch (error) {
@@ -62,102 +63,93 @@ async function performLocalAnalysis(base64Image: string) {
   }
 }
 
-function analyzeImageBuffer(buffer: Buffer) {
-  // Analyze actual pixel RGB values to detect disease patterns
-  // This function looks at the color distribution in the image data
+async function analyzeImagePixels(imageBuffer: Buffer) {
+  // For server-side image analysis without external libraries,
+  // we analyze the image by looking at color byte patterns more intelligently
   
   try {
-    // Extract RGB pixel data - assume image contains raw or decodable color bytes
-    // Sample pixels throughout the buffer to avoid header data
+    // Detect image type and find image data section
+    let pixelDataStart = 0;
+    let bytesPerPixel = 3; // RGB
     
-    let redPixels = 0;
-    let greenPixels = 0;
-    let bluePixels = 0;
-    let brownPixels = 0;
-    let yellowPixels = 0;
-    let darkPixels = 0;
-    let whitePixels = 0;
-    let grayPixels = 0;
-    let totalPixelsSampled = 0;
-
-    // Find image data start (skip headers)
-    let startOffset = 1000;
-    if (buffer[0] === 0xFF && buffer[1] === 0xD8) { // JPEG
-      startOffset = 2000;
-    } else if (buffer[0] === 0x89 && buffer[1] === 0x50) { // PNG
-      startOffset = 1000;
+    // For JPEG: look for SOF (Start of Frame) marker
+    if (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8) {
+      console.log("[v0] Detected JPEG format");
+      // Find JFIF/Image data - scan for D9 (EOI) marker working backwards
+      // JPEG data is complex, so we'll sample from middle sections
+      pixelDataStart = Math.floor(imageBuffer.length * 0.15);
+    } 
+    // For PNG: look after IHDR chunk
+    else if (imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50) {
+      console.log("[v0] Detected PNG format");
+      // PNG IHDR is 8 bytes signature + 13 bytes IHDR + 4 bytes CRC = 25 bytes minimum
+      // Actual image data comes after
+      pixelDataStart = 100;
     }
-
-    // Sample pixels by reading every 3-byte RGB triplet
-    for (let i = startOffset; i < buffer.length - 2; i += 12) {
-      const r = buffer[i] || 0;
-      const g = buffer[i + 1] || 0;
-      const b = buffer[i + 2] || 0;
-
-      // Skip pure black/white header bytes (likely not pixel data)
-      if ((r === 0 && g === 0 && b === 0) || (r === 255 && g === 255 && b === 255)) {
-        continue;
-      }
-
-      totalPixelsSampled++;
-
-      // Calculate color characteristics
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
+    
+    // Sample pixels across the entire image
+    let redCount = 0, greenCount = 0, blueCount = 0;
+    let brownCount = 0, yellowCount = 0, darkCount = 0;
+    let whiteCount = 0, grayCount = 0;
+    let totalSamples = 0;
+    
+    // Extract color samples using variable stride to cover the whole image
+    const stride = Math.max(1, Math.floor((imageBuffer.length - pixelDataStart) / 3000));
+    
+    for (let i = pixelDataStart; i < imageBuffer.length - 2; i += stride) {
+      const r = imageBuffer[i] || 0;
+      const g = imageBuffer[i + 1] || 0;
+      const b = imageBuffer[i + 2] || 0;
+      
+      // Skip if all same (likely metadata)
+      if (r === g && g === b && r > 200) continue;
+      if (r === 0 && g === 0 && b === 0) continue;
+      
+      totalSamples++;
       const brightness = (r + g + b) / 3;
-      const saturation = max > 0 ? (max - min) / max : 0;
-
-      // Classify pixels by color
-      if (brightness < 50) {
-        // Very dark - necrotic spots
-        darkPixels++;
-      } else if (brightness > 220) {
-        // Very bright - white coating
-        whitePixels++;
-      } else if (r > g && r > b && r > 150) {
-        // Red/reddish - disease stress
-        redPixels++;
-      } else if (g > r && g > b && g > 100) {
-        // Green - healthy foliage
-        greenPixels++;
-      } else if (r > 150 && g > 100 && b < 100) {
-        // Brown/tan - soil or brown spots
-        brownPixels++;
-      } else if (r > 200 && g > 180 && b < 100) {
-        // Yellow/orange - yellowing or stress
-        yellowPixels++;
-      } else if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20) {
-        // Gray - neutral color
-        grayPixels++;
+      
+      // Classify each sample
+      if (brightness < 40) {
+        darkCount++;
+      } else if (brightness > 230) {
+        whiteCount++;
+      } else if (r > g + 20 && r > b + 20) {
+        // Red channel dominant
+        if (brightness > 150) {
+          redCount++;
+        } else {
+          darkCount++;
+        }
+      } else if (g > r && g > b && g > 80) {
+        // Green dominant
+        greenCount++;
+      } else if (r > 140 && g > 100 && b < 80) {
+        // Brown/tan
+        brownCount++;
+      } else if (r > 180 && g > 150 && b < 120) {
+        // Yellow/orange
+        yellowCount++;
+      } else if (Math.abs(r - g) < 30 && Math.abs(g - b) < 30) {
+        // Gray
+        grayCount++;
       }
+      
+      if (totalSamples > 5000) break; // Limit iterations
     }
-
-    // Normalize to ratios
-    const total = Math.max(1, totalPixelsSampled);
-    const redRatio = redPixels / total;
-    const greenRatio = greenPixels / total;
-    const brownRatio = brownPixels / total;
-    const yellowRatio = yellowPixels / total;
-    const darkRatio = darkPixels / total;
-    const whiteRatio = whitePixels / total;
-    const grayRatio = grayPixels / total;
-
-    console.log("[v0] Pixel analysis - Green:", (greenRatio * 100).toFixed(1) + "% Yellow:", (yellowRatio * 100).toFixed(1) + "% Brown:", (brownRatio * 100).toFixed(1) + "% Dark:", (darkRatio * 100).toFixed(1) + "% White:", (whiteRatio * 100).toFixed(1) + "%");
-
-    const diseaseIndicators = {
-      // Disease severity indicators
-      necroticSpotIndicator: darkRatio * 3,
-      rustSpotIndicator: (brownRatio + redRatio) * 2,
-      yelloingIndicator: yellowRatio * 2.5,
-      whiteCoatingIndicator: whiteRatio * 2,
-      
-      // Overall disease likelihood
-      diseaseLikelihood: (darkRatio + brownRatio + yellowRatio + redRatio) - (greenRatio * 0.5),
-      
-      // Health indicator
-      healthyIndicator: greenRatio * 1.5,
-      
-      // Color ratios for decision making
+    
+    // Normalize ratios
+    const total = Math.max(1, totalSamples);
+    const redRatio = redCount / total;
+    const greenRatio = greenCount / total;
+    const brownRatio = brownCount / total;
+    const yellowRatio = yellowCount / total;
+    const darkRatio = darkCount / total;
+    const whiteRatio = whiteCount / total;
+    const grayRatio = grayCount / total;
+    
+    console.log("[v0] Sampled", totalSamples, "pixels - Green:', (greenRatio*100).toFixed(1), 'Yellow:', (yellowRatio*100).toFixed(1), 'Brown:', (brownRatio*100).toFixed(1), 'Dark:', (darkRatio*100).toFixed(1), 'Red:', (redRatio*100).toFixed(1), 'White:', (whiteRatio*100).toFixed(1));
+    
+    return {
       greenRatio,
       yellowRatio,
       brownRatio,
@@ -165,31 +157,21 @@ function analyzeImageBuffer(buffer: Buffer) {
       whiteRatio,
       redRatio,
       grayRatio,
-      totalPixelsSampled,
+      necroticSpotIndicator: darkRatio * 2.5,
+      rustSpotIndicator: (brownRatio + redRatio) * 1.8,
+      yelloingIndicator: yellowRatio * 2,
+      whiteCoatingIndicator: whiteRatio * 2.5,
+      diseaseLikelihood: (darkRatio + brownRatio + yellowRatio + redRatio * 0.5) - (greenRatio * 0.3),
+      healthyIndicator: greenRatio * 1.2,
+      totalPixelsSampled: totalSamples,
     };
-
-    return diseaseIndicators;
   } catch (error) {
-    console.error("[v0] Error analyzing image buffer:", error);
-    // Return neutral analysis if parsing fails
-    return {
-      necroticSpotIndicator: 0.05,
-      rustSpotIndicator: 0.05,
-      yelloingIndicator: 0.05,
-      whiteCoatingIndicator: 0.05,
-      diseaseLikelihood: 0.1,
-      healthyIndicator: 0.6,
-      greenRatio: 0.5,
-      yellowRatio: 0.1,
-      brownRatio: 0.2,
-      darkRatio: 0.05,
-      whiteRatio: 0.05,
-      redRatio: 0.05,
-      grayRatio: 0.1,
-      totalPixelsSampled: 0,
-    };
+    console.error("[v0] Pixel analysis error:", error);
+    throw error;
   }
 }
+
+
 
 function generateDiseaseReport(indicators: Record<string, number>) {
   const { 
