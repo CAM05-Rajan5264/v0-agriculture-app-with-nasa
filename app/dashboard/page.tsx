@@ -28,7 +28,6 @@ export default async function DashboardPage() {
   ]
   
   const unreadAlerts = 2
-    .eq("is_read", false)
 
   const farmCount = farms?.length || 0
   const cropCount = crops?.length || 0
