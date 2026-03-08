@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { IrrigationCard } from "@/components/dashboard/irrigation-card"
 import { LogIrrigationDialog } from "@/components/irrigation/log-irrigation-dialog"
@@ -12,12 +11,13 @@ import { Button } from "@/components/ui/button"
 import type { IrrigationEvent } from "@/lib/types"
 
 export default async function IrrigationPage() {
-  const supabase = await createClient()
+  // Use demo crops instead of database
+  const crops = [
+    { id: "1", name: "Corn", status: "active", farm_id: "1", farms: { id: "1", name: "Main Farm" } },
+    { id: "2", name: "Soybeans", status: "active", farm_id: "2", farms: { id: "2", name: "North Field" } },
+  ]
 
-  const { data: crops } = await supabase.from("crops").select("*, farms(*)").eq("status", "active")
-
-  const { count: unreadAlerts } = await supabase
-    .from("alerts")
+  const unreadAlerts = 2
     .select("*", { count: "exact", head: true })
     .eq("is_read", false)
 

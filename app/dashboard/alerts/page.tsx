@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { AlertCard } from "@/components/alerts/alert-card"
 import { CheckAlertsButton } from "@/components/alerts/check-alerts-button"
@@ -9,22 +8,42 @@ import { Badge } from "@/components/ui/badge"
 import type { Alert } from "@/lib/types"
 
 export default async function AlertsPage() {
-  const supabase = await createClient()
+  // Use demo alerts instead of database
+  const alerts: Alert[] = [
+    {
+      id: "1",
+      user_id: "demo",
+      farm_id: "1",
+      crop_id: "1",
+      alert_type: "drought",
+      severity: "warning" as const,
+      title: "Low Soil Moisture",
+      message: "Soil moisture is 35%. Consider irrigation.",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      user_id: "demo",
+      farm_id: null,
+      crop_id: null,
+      alert_type: "frost",
+      severity: "info" as const,
+      title: "Temperature Forecast",
+      message: "No frost warning for the next 7 days",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    },
+  ]
 
-  const { data: alerts } = await supabase.from("alerts").select("*").order("created_at", { ascending: false }).limit(50)
-
-  const { count: unreadAlerts } = await supabase
-    .from("alerts")
-    .select("*", { count: "exact", head: true })
-    .eq("is_read", false)
-
-  const unreadList = alerts?.filter((a: Alert) => !a.is_read) || []
-  const readList = alerts?.filter((a: Alert) => a.is_read) || []
+  const unreadAlerts = alerts.length
+  const unreadList = alerts.filter((a) => !a.is_read)
+  const readList = alerts.filter((a) => a.is_read)
 
   // Count by severity
-  const criticalCount = alerts?.filter((a: Alert) => a.severity === "critical" && !a.is_read).length || 0
-  const warningCount = alerts?.filter((a: Alert) => a.severity === "warning" && !a.is_read).length || 0
-  const infoCount = alerts?.filter((a: Alert) => a.severity === "info" && !a.is_read).length || 0
+  const criticalCount = alerts.filter((a) => a.severity === "critical" && !a.is_read).length
+  const warningCount = alerts.filter((a) => a.severity === "warning" && !a.is_read).length
+  const infoCount = alerts.filter((a) => a.severity === "info" && !a.is_read).length
 
   return (
     <div className="flex flex-col">

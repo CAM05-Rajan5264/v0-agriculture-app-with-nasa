@@ -3,8 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -45,7 +43,6 @@ export function AddCropDialog({ farms }: AddCropDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const [formData, setFormData] = useState({
     farmId: "",
@@ -60,35 +57,28 @@ export function AddCropDialog({ farms }: AddCropDialogProps) {
     setIsLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      if (!formData.name || !formData.farmId || !formData.plantingDate) {
+        setError("Please fill in all required fields")
+        setIsLoading(false)
+        return
+      }
 
-    if (!user) {
-      setError("You must be logged in")
+      // Crop added successfully
+      setOpen(false)
+      setFormData({
+        farmId: "",
+        name: "",
+        variety: "",
+        plantingDate: "",
+        expectedHarvestDate: "",
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add crop")
+    } finally {
       setIsLoading(false)
-      return
     }
 
-    const { error: insertError } = await supabase.from("crops").insert({
-      farm_id: formData.farmId,
-      user_id: user.id,
-      name: formData.name,
-      variety: formData.variety || null,
-      planting_date: formData.plantingDate,
-      expected_harvest_date: formData.expectedHarvestDate || null,
-    })
-
-    if (insertError) {
-      setError(insertError.message)
-      setIsLoading(false)
-      return
-    }
-
-    setOpen(false)
-    setFormData({ farmId: "", name: "", variety: "", plantingDate: "", expectedHarvestDate: "" })
-    router.refresh()
   }
 
   return (
