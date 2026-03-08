@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type { Crop, Farm, FarmingActivity } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Bug, Leaf, Wrench, Plus, Sprout } from "lucide-react"
 import { Button } from "@/components/ui/button"
