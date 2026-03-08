@@ -1,30 +1,44 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { PhenologyCard } from "@/components/dashboard/phenology-card"
 import { CropGuideCard } from "@/components/phenology/crop-guide-card"
 import { SowingRecommendationCard } from "@/components/phenology/sowing-recommendation-card"
 import { HarvestTimelineCard } from "@/components/phenology/harvest-timeline-card"
 import { calculatePhenology, getWeatherData } from "@/lib/nasa-api"
-import { CROP_GUIDES, getCropGuide } from "@/lib/crop-guide"
+import { getCropGuide } from "@/lib/crop-guide"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, Sprout, BookOpen, Calendar } from "lucide-react"
+import { TrendingUp, BookOpen, Calendar } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 export default async function PhenologyPage() {
-  const supabase = await createClient()
-
-  const { data: crops } = await supabase.from("crops").select("*, farms(*)").eq("status", "active")
-  const { data: farms } = await supabase.from("farms").select("*")
-  const { count: unreadAlerts } = await supabase
-    .from("alerts")
-    .select("*", { count: "exact", head: true })
-    .eq("is_read", false)
+  // Use demo data instead of database
+  const farms = [
+    { id: "1", name: "Main Farm", latitude: 41.8781, longitude: -87.6298 },
+  ]
+  const crops = [
+    { 
+      id: "1", 
+      name: "Corn", 
+      status: "active", 
+      farm_id: "1", 
+      planting_date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+      farms: farms[0]
+    },
+    { 
+      id: "2", 
+      name: "Soybeans", 
+      status: "active", 
+      farm_id: "1", 
+      planting_date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+      farms: farms[0]
+    },
+  ]
+  const unreadAlerts = 2
 
   // Get weather data from the first farm for sowing recommendations
   const defaultFarm = farms?.[0]
   const weather = defaultFarm ? await getWeatherData(defaultFarm.latitude, defaultFarm.longitude) : null
-  const latitude = defaultFarm?.latitude ?? 40 // Default to northern hemisphere
+  const latitude = defaultFarm?.latitude ?? 40
 
   const phenologyData = await Promise.all(
     (crops || []).map(async (crop) => ({

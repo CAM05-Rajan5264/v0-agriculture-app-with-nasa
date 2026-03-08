@@ -1,21 +1,19 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { WeatherCard } from "@/components/dashboard/weather-card"
 import { WeatherHistoryCard } from "@/components/weather/weather-history-card"
 import { WeatherForecastCard } from "@/components/weather/weather-forecast-card"
 import { getWeatherData, getWeatherHistory, getWeatherForecast } from "@/lib/nasa-api"
-import { Cloud, MapPin } from "lucide-react"
+import { Cloud } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 export default async function WeatherPage() {
-  const supabase = await createClient()
-
-  const { data: farms } = await supabase.from("farms").select("*").order("created_at", { ascending: false })
-  const { count: unreadAlerts } = await supabase
-    .from("alerts")
-    .select("*", { count: "exact", head: true })
-    .eq("is_read", false)
+  // Use demo farms instead of database
+  const farms = [
+    { id: "1", name: "Main Farm", location_name: "Iowa", latitude: 41.8781, longitude: -87.6298 },
+    { id: "2", name: "North Field", location_name: "Illinois", latitude: 40.7128, longitude: -88.2434 },
+  ]
+  const unreadAlerts = 2
 
   const weatherData = await Promise.all(
     (farms || []).map(async (farm) => ({

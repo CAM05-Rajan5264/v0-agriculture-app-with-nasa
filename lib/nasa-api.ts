@@ -101,11 +101,15 @@ export async function fetchPOWERData(
   rainfall: number
   solarRadiation: number
 }> {
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
   const data = await fetchNASAPowerData({
     parameters: "T2M,RH2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN",
     community: "AG",
-    longitude,
-    latitude,
+    longitude: lng,
+    latitude: lat,
     start: startDate.replace(/-/g, ""),
     end: endDate.replace(/-/g, ""),
     format: "JSON",
@@ -148,13 +152,17 @@ export async function fetchPOWERData(
 }
 
 export async function getWeatherData(latitude: number, longitude: number): Promise<NASAWeatherData> {
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude // Default to Iowa coordinates
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
   const { start, end } = getDateRange(7)
 
   const data = await fetchNASAPowerData({
     parameters: "T2M,RH2M,PRECTOTCORR,WS2M,ALLSKY_SFC_SW_DWN",
     community: "AG",
-    longitude,
-    latitude,
+    longitude: lng,
+    latitude: lat,
     start,
     end,
     format: "JSON",
@@ -235,13 +243,17 @@ export async function getWeatherHistory(
     condition: "sunny" | "partly-cloudy" | "cloudy" | "rainy"
   }[]
 > {
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
   const { start, end } = getDateRange(days)
 
   const data = await fetchNASAPowerData({
     parameters: "T2M,T2M_MIN,T2M_MAX,RH2M,PRECTOTCORR,WS2M,CLOUD_AMT,ALLSKY_SFC_SW_DWN",
     community: "AG",
-    longitude,
-    latitude,
+    longitude: lng,
+    latitude: lat,
     start,
     end,
     format: "JSON",
@@ -338,9 +350,13 @@ export async function getWeatherForecast(
     precipProbability: number
   }[]
 > {
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
   // NASA POWER doesn't provide forecast data, so we use climatological patterns
   // based on recent historical data to generate realistic forecast
-  const history = await getWeatherHistory(latitude, longitude, 30)
+  const history = await getWeatherHistory(lat, lng, 30)
 
   // Calculate averages and trends from historical data
   const recentDays = history.slice(-7)
@@ -479,7 +495,11 @@ export async function getIrrigationStatus(
   longitude: number,
   cropType: string,
 ): Promise<IrrigationStatus> {
-  const weather = await getWeatherData(latitude, longitude)
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
+  const weather = await getWeatherData(lat, lng)
 
   // Crop water requirements (mm/day) vary by type
   const cropWaterNeeds: Record<string, number> = {
@@ -521,12 +541,16 @@ export async function getIrrigationStatus(
 }
 
 export async function calculatePhenology(cropType: string, plantingDate: string, latitude: number, longitude: number): Promise<PhenologyData> {
+  // Validate and provide defaults for coordinates
+  const lat = isNaN(latitude) || latitude === undefined ? 40.7128 : latitude
+  const lng = isNaN(longitude) || longitude === undefined ? -88.2434 : longitude
+  
   const planted = new Date(plantingDate)
   const now = new Date()
   const daysSincePlanting = Math.floor((now.getTime() - planted.getTime()) / (1000 * 60 * 60 * 24))
 
   // Get actual temperature from NASA API for accurate GDD calculation
-  const weather = await getWeatherData(latitude, longitude)
+  const weather = await getWeatherData(lat, lng)
   const avgTemp = weather.temperature
   const baseTemp = 10 // Base temperature for most crops
   const gdd = daysSincePlanting * Math.max(0, avgTemp - baseTemp)

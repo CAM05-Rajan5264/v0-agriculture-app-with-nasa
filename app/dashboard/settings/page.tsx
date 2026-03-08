@@ -1,19 +1,18 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { User, Shield } from "lucide-react"
 
 export default async function SettingsPage() {
-  const supabase = await createClient()
+  // Demo user since auth is disabled
+  const user = {
+    email: "farmer@example.com",
+    created_at: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+    user_metadata: {
+      farm_name: "Main Farm Operations"
+    }
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { count: unreadAlerts } = await supabase
-    .from("alerts")
-    .select("*", { count: "exact", head: true })
-    .eq("is_read", false)
+  const unreadAlerts = 2
 
   return (
     <div className="flex flex-col">
