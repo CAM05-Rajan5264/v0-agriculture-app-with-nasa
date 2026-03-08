@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { AddFarmDialog } from "@/components/farms/add-farm-dialog"
 import { FarmCard } from "@/components/farms/farm-card"
@@ -5,13 +6,13 @@ import type { Farm } from "@/lib/types"
 import { MapPin } from "lucide-react"
 
 export default async function FarmsPage() {
-  // Use demo farms instead of database
-  const farms: Farm[] = [
-    { id: "1", name: "Main Farm", location: "Iowa", acreage: 250, soil_type: "loam", created_at: new Date().toISOString() },
-    { id: "2", name: "North Field", location: "Illinois", acreage: 150, soil_type: "clay", created_at: new Date().toISOString() },
-  ]
+  const supabase = await createClient()
+  const { data: farms } = await supabase.from("farms").select("*").order("created_at", { ascending: false })
 
-  const unreadAlerts = 2
+  const { count: unreadAlerts } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_read", false)
 
   return (
     <div className="flex flex-col">

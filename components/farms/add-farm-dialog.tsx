@@ -3,6 +3,8 @@
 import type React from "react"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,6 +23,7 @@ export function AddFarmDialog() {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,22 +38,35 @@ export function AddFarmDialog() {
     setIsLoading(true)
     setError(null)
 
-    try {
-      // Simulate adding farm - in production this would call an API
-      if (!formData.name || !formData.locationName) {
-        setError("Please fill in all required fields")
-        setIsLoading(false)
-        return
-      }
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      // Farm added successfully
-      setOpen(false)
-      setFormData({ name: "", locationName: "", latitude: "", longitude: "", areaHectares: "" })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add farm")
-    } finally {
+    if (!user) {
+      setError("You must be logged in")
       setIsLoading(false)
+      return
     }
+
+    const { error: insertError } = await supabase.from("farms").insert({
+      user_id: user.id,
+      name: formData.name,
+      location_name: formData.locationName,
+      latitude: Number.parseFloat(formData.latitude),
+      longitude: Number.parseFloat(formData.longitude),
+      area_hectares: formData.areaHectares ? Number.parseFloat(formData.areaHectares) : null,
+    })
+
+    if (insertError) {
+      setError(insertError.message)
+      setIsLoading(false)
+      return
+    }
+
+    setOpen(false)
+    setFormData({ name: "", locationName: "", latitude: "", longitude: "", areaHectares: "" })
+    router.refresh()
   }
 
   const getCurrentLocation = () => {

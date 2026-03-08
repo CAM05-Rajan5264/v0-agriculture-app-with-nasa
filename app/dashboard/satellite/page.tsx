@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,20 +8,19 @@ import { SatelliteNDVIChart } from "@/components/satellite/satellite-ndvi-chart"
 import { SoilMoistureChart } from "@/components/satellite/soil-moisture-chart"
 import { NaturalEventsMap } from "@/components/satellite/natural-events-map"
 import { getSatelliteNDVI, getSoilMoistureFromSMAP, getNaturalEvents, getSatelliteImageLayers } from "@/lib/nasa-satellite-api"
-import { Satellite, CloudRain, Leaf } from "lucide-react"
+import { Satellite, MapPin, Flame, CloudRain, Leaf } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 export default async function SatellitePage() {
-  // Use demo farms instead of database
-  const farms = [
-    { id: "1", name: "Main Farm", latitude: 41.8781, longitude: -87.6298 },
-    { id: "2", name: "North Field", latitude: 40.7128, longitude: -88.2434 },
-  ]
-  const crops = [
-    { id: "1", name: "Corn", status: "active", farm_id: "1", farms: farms[0] },
-  ]
-  const unreadAlerts = 2
+  const supabase = await createClient()
+
+  const { data: farms } = await supabase.from("farms").select("*").order("created_at", { ascending: false })
+  const { data: crops } = await supabase.from("crops").select("*, farms(*)").eq("status", "active")
+  const { count: unreadAlerts } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_read", false)
 
   const primaryFarm = farms?.[0]
   const primaryCrop = crops?.[0]

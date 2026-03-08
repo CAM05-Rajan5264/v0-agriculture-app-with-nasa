@@ -1,34 +1,61 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import type { Crop, Farm, FarmingActivity } from "@/lib/types"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Bug, Leaf, Wrench, Plus, Sprout } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Plus, Sprout, Bug, Leaf, Wrench } from "lucide-react"
 import { AddActivityDialog } from "@/components/activities/add-activity-dialog"
 import { ActivityList } from "@/components/activities/activity-list"
 
 export default function ActivitiesPage() {
+  const [activities, setActivities] = useState<FarmingActivity[]>([])
+  const [farms, setFarms] = useState<Farm[]>([])
+  const [crops, setCrops] = useState<Crop[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedType, setSelectedType] = useState<"pesticide" | "fertilizer" | "harvest" | "maintenance" | "all">(
     "all",
   )
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  // Demo data
-  const farms: Farm[] = [
-    { id: "1", name: "Main Farm", location: "Iowa", acreage: 250, soil_type: "loam", created_at: new Date().toISOString() },
-    { id: "2", name: "North Field", location: "Illinois", acreage: 150, soil_type: "clay", created_at: new Date().toISOString() },
-  ]
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const crops: Crop[] = [
-    { id: "1", name: "Corn", status: "active", farm_id: "1", planting_date: new Date().toISOString(), expected_harvest_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), created_at: new Date().toISOString() },
-  ]
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-  const activities: FarmingActivity[] = [
-    { id: "1", crop_id: "1", activity_type: "pesticide", activity_date: new Date().toISOString(), notes: "Applied fungicide", created_at: new Date().toISOString() },
-    { id: "2", crop_id: "1", activity_type: "fertilizer", activity_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), notes: "Applied NPK fertilizer", created_at: new Date().toISOString() },
-  ]
+      if (!user) return
+
+      // Load farms
+      const { data: farmsData } = await supabase.from("farms").select("*").eq("user_id", user.id)
+
+      // Load crops
+      const { data: cropsData } = await supabase.from("crops").select("*").eq("user_id", user.id)
+
+      // Load activities
+      const { data: activitiesData } = await supabase
+        .from("farming_activities")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("activity_date", { ascending: false })
+
+      setFarms(farmsData || [])
+      setCrops(cropsData || [])
+      setActivities(activitiesData || [])
+    } catch (error) {
+      console.error("[v0] Error loading data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredActivities =
     selectedType === "all" ? activities : activities.filter((a) => a.activity_type === selectedType)
@@ -59,6 +86,7 @@ export default function ActivitiesPage() {
         crops={crops}
         farms={farms}
         onActivityAdded={() => {
+          loadData()
           setDialogOpen(false)
         }}
       />

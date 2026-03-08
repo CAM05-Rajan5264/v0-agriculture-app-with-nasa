@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { AddCropDialog } from "@/components/crops/add-crop-dialog"
 import { CropCard } from "@/components/crops/crop-card"
@@ -5,19 +6,14 @@ import { Sprout } from "lucide-react"
 import Link from "next/link"
 
 export default async function CropsPage() {
-  // Use demo data instead of database queries
-  const farms = [
-    { id: "1", name: "Main Farm", location: "Iowa", acreage: 250 },
-    { id: "2", name: "North Field", location: "Illinois", acreage: 150 },
-  ]
-  
-  const crops = [
-    { id: "1", name: "Corn", status: "active", farm_id: "1", farms: farms[0], health_score: 85 },
-    { id: "2", name: "Soybeans", status: "active", farm_id: "2", farms: farms[1], health_score: 78 },
-    { id: "3", name: "Wheat", status: "active", farm_id: "1", farms: farms[0], health_score: 92 },
-  ]
-  
-  const unreadAlerts = 2
+  const supabase = await createClient()
+
+  const { data: farms } = await supabase.from("farms").select("*").order("name")
+  const { data: crops } = await supabase.from("crops").select("*, farms(*)").order("created_at", { ascending: false })
+  const { count: unreadAlerts } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_read", false)
 
   return (
     <div className="flex flex-col">

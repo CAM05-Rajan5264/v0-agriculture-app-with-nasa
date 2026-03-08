@@ -103,37 +103,23 @@ export default function DiseaseDetectionPage() {
       })
 
       if (!response.ok) {
-        try {
-          const errorData = await response.json()
-          throw new Error(errorData.error || `Analysis failed with status ${response.status}`)
-        } catch (parseError) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`)
-        }
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Analysis failed")
       }
 
       const data = await response.json()
-      if (!data.analysis) {
-        throw new Error("No analysis results received from the server")
-      }
       setAnalysis(data.analysis)
-      setError(null)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred during analysis";
-      console.error("[v0] Disease analysis error:", errorMessage)
       
       // Provide helpful error messages
       if (errorMessage.includes("Unauthorized")) {
         setError("Please log in to use the disease detection feature.");
-      } else if (errorMessage.includes("Image") || errorMessage.includes("format")) {
-        setError("Image format error. Please ensure it's a valid JPEG or PNG file under 5MB.");
-      } else if (errorMessage.includes("Parse")) {
-        setError("Failed to parse the response. Please try again with a different image.");
-      } else if (errorMessage.includes("No analysis")) {
-        setError("The analysis service returned an invalid response. Please try again.");
+      } else if (errorMessage.includes("Image")) {
+        setError("Image format error. Please ensure it's a valid image file (JPEG, PNG, or WebP) under 5MB.");
       } else {
-        setError(errorMessage || "Analysis failed. Please try again with a clearer image of the affected area.");
+        setError(errorMessage || "Analysis failed. Please try again with a clearer image.");
       }
-      setAnalysis(null)
     } finally {
       setLoading(false)
     }
@@ -265,7 +251,7 @@ export default function DiseaseDetectionPage() {
                   )}
                   <span>{!analysis.isDisease ? "✓ Plant Healthy" : "⚠ Disease Detected"}</span>
                 </CardTitle>
-                <CardDescription>AI-Powered Analysis Results</CardDescription>
+                <CardDescription>Powered by Plant.id AI Analysis</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className={`p-4 rounded-lg border-2 ${analysis.isDisease ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"}`}>

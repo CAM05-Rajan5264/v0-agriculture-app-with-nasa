@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -33,31 +34,43 @@ interface Review {
 }
 
 export default function DeveloperPage() {
-  // Demo data - no auth required
-  const userId = "demo-user"
-  const userEmail = "farmer@example.com"
-  const [reviews, setReviews] = useState<Review[]>([
-    {
-      id: "1",
-      user_id: "user1",
-      rating: 5,
-      comment: "FarmPulse has transformed my farming operations!",
-      user_name: "John Farmer",
-      created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: "2",
-      user_id: "user2",
-      rating: 4,
-      comment: "Great tool for monitoring crop health",
-      user_name: "Sarah Agricultural",
-      created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ])
-  const existingReview = reviews.find((r) => r.user_id === userId) || null
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [existingReview, setExistingReview] = useState<Review | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchReviews = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase.from("app_reviews").select("*").order("created_at", { ascending: false })
+
+    if (data) {
+      setReviews(data)
+      if (userId) {
+        const userReview = data.find((r) => r.user_id === userId)
         setExistingReview(userReview || null)
       }
     }
+  }, [userId])
+
+  useEffect(() => {
+    const init = async () => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        setUserEmail(user.email || null)
+      }
+      setIsLoading(false)
+    }
+    init()
+  }, [])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const features = [
     {
@@ -101,6 +114,14 @@ export default function DeveloperPage() {
       description: "Works seamlessly on desktop, tablet, and mobile devices",
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 p-6">

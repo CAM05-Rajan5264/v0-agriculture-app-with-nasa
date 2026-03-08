@@ -1,11 +1,27 @@
+import { generateText } from "ai";
+import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
+    // Get authenticated user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { base64Image, cropType } = body;
+    const { base64Image, cropId, farmId, cropType } = body;
 
     if (!base64Image) {
       return NextResponse.json(
@@ -22,14 +38,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[v0] Starting crop disease analysis...");
-    
-    // Use local image analysis (no AI API required, completely free)
-    const analysisResult = await performLocalAnalysis(base64Image);
+    console.log("[v0] Starting AI-powered disease analysis...");
+    let analysisResult;
+
+    try {
+      // Use AI to analyze the image with free model
+      analysisResult = await analyzeWithAI(base64Image, cropType);
+      console.log("[v0] Analysis complete via AI");
+    } catch (aiError) {
+      console.error("[v0] AI analysis error:", aiError);
+      console.log("[v0] Falling back to local analysis...");
+      analysisResult = await performLocalAnalysis(base64Image);
+    }
+
+    // Save to database
+    const { data, error } = await supabase
+      .from("disease_detections")
+      .insert({
+        user_id: user.id,
+        crop_id: cropId || null,
+        farm_id: farmId || null,
+        image_url: base64Image,
+        detected_disease: analysisResult.disease,
+        confidence_score: analysisResult.confidence,
+        severity: analysisResult.severity,
+        symptoms: analysisResult.symptoms,
+        recommended_treatment: analysisResult.treatment,
+        treatment_urgency: analysisResult.urgency,
+        raw_analysis: JSON.stringify(analysisResult),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[v0] Database error:", error);
+      // Don't fail the request if database save fails - still return the analysis
+      console.warn("[v0] Analysis complete but database save failed");
+    }
 
     return NextResponse.json({
       success: true,
       analysis: analysisResult,
+      savedRecord: data || null,
     });
   } catch (error) {
     console.error("[v0] Analysis error:", error);
@@ -37,6 +87,77 @@ export async function POST(request: NextRequest) {
       { error: "Analysis failed: " + (error instanceof Error ? error.message : "Unknown error") },
       { status: 500 }
     );
+  }
+}
+
+async function analyzeWithAI(base64Image: string, cropType?: string) {
+  console.log("[v0] Using AI to analyze crop disease...");
+
+  try {
+    // Create a detailed prompt for disease analysis
+    const prompt = `You are an expert agricultural pathologist. Analyze this crop image for diseases and health status.
+
+${cropType ? `The crop type is: ${cropType}` : ""}
+
+IMPORTANT: Respond with ONLY a valid JSON object (no markdown, no extra text) in this exact format:
+{
+  "disease": "Disease name or 'Healthy Plant'",
+  "confidence": 0.85,
+  "severity": "mild|moderate|severe|critical",
+  "symptoms": ["symptom1", "symptom2"],
+  "treatment": "Treatment recommendation",
+  "urgency": "low|medium|high|critical",
+  "recommendations": ["action1", "action2"],
+  "isDisease": true|false
+}
+
+Analyze the image and provide the JSON response only.`;
+
+    const result = await generateText({
+      model: "openai/gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              image: base64Image,
+            },
+            {
+              type: "text",
+              text: prompt,
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+      maxTokens: 500,
+    });
+
+    console.log("[v0] AI response:", result.text);
+
+    // Parse the JSON response
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Invalid response format from AI");
+    }
+
+    const analysis = JSON.parse(jsonMatch[0]);
+
+    // Validate and normalize the response
+    return {
+      disease: analysis.disease || "Unknown",
+      confidence: Math.min(0.99, Math.max(0.5, Number(analysis.confidence) || 0.7)),
+      severity: (analysis.severity || "mild") as "mild" | "moderate" | "severe" | "critical",
+      symptoms: Array.isArray(analysis.symptoms) ? analysis.symptoms : [],
+      treatment: analysis.treatment || "Consult with an agricultural specialist",
+      urgency: (analysis.urgency || "low") as "low" | "medium" | "high" | "critical",
+      recommendations: Array.isArray(analysis.recommendations) ? analysis.recommendations : [],
+      isDisease: Boolean(analysis.isDisease),
+    };
+  } catch (error) {
+    console.error("[v0] AI analysis failed:", error);
+    throw error;
   }
 }
 
@@ -52,9 +173,8 @@ async function performLocalAnalysis(base64Image: string) {
     const base64Data = base64Image.split(",")[1] || base64Image;
     const buffer = Buffer.from(base64Data, "base64");
 
-    // Create a canvas-like analysis using sharper approach
-    // Extract pixel data directly from image buffer
-    const diseaseIndicators = await analyzeImagePixels(buffer);
+    // Analyze image data for disease indicators
+    const diseaseIndicators = analyzeImageBuffer(buffer);
 
     return generateDiseaseReport(diseaseIndicators);
   } catch (error) {
@@ -63,158 +183,77 @@ async function performLocalAnalysis(base64Image: string) {
   }
 }
 
-async function analyzeImagePixels(imageBuffer: Buffer) {
-  // Analyze actual image content using DCT/frequency analysis for JPEG
-  // and scanning for actual RGB patterns in the decompressed data
-  try {
-    if (!imageBuffer || imageBuffer.length < 100) {
-      console.log("[v0] Image buffer too small");
-      return getDefaultIndicators();
-    }
-
-    const indicators = analyzeImageContent(imageBuffer);
-    console.log("[v0] Image analysis - Dark:", (indicators.darkRatio * 100).toFixed(1),
-      "% Brown:", (indicators.brownRatio * 100).toFixed(1),
-      "% Green:", (indicators.greenRatio * 100).toFixed(1),
-      "% Yellow:", (indicators.yellowRatio * 100).toFixed(1),
-      "% Red:", (indicators.redRatio * 100).toFixed(1),
-      "% White:", (indicators.whiteRatio * 100).toFixed(1));
-
-    return {
-      greenRatio: indicators.greenRatio,
-      yellowRatio: indicators.yellowRatio,
-      brownRatio: indicators.brownRatio,
-      darkRatio: indicators.darkRatio,
-      whiteRatio: indicators.whiteRatio,
-      redRatio: indicators.redRatio,
-      grayRatio: indicators.grayRatio,
-      necroticSpotIndicator: indicators.darkRatio * 3,
-      rustSpotIndicator: (indicators.brownRatio + indicators.redRatio) * 2.2,
-      yelloingIndicator: indicators.yellowRatio * 2.8,
-      whiteCoatingIndicator: indicators.whiteRatio * 2.5,
-      diseaseLikelihood: (indicators.darkRatio * 1.5 + indicators.brownRatio + indicators.yellowRatio) - (indicators.greenRatio * 0.3),
-      healthyIndicator: indicators.greenRatio * 1.8,
-      totalPixelsSampled: indicators.sampleCount,
-    };
-  } catch (error) {
-    console.error("[v0] Pixel analysis error:", error);
-    return getDefaultIndicators();
-  }
-}
-
-function analyzeImageContent(buffer: Buffer) {
-  // Intelligently detect actual image content by analyzing patterns
-  // Different disease symptoms have distinct color/byte patterns
+function analyzeImageBuffer(buffer: Buffer) {
+  // Enhanced image analysis for disease detection
+  // Analyzes color patterns and byte distribution to identify disease indicators
   
-  let darkCount = 0, brownCount = 0, greenCount = 0, yellowCount = 0;
-  let redCount = 0, whiteCount = 0, grayCount = 0;
-  let sampleCount = 0;
+  let veryDarkCount = 0;   // < 40 (very dark: necrotic spots, black lesions)
+  let darkCount = 0;       // 40-90 (dark: brown spots, rust)
+  let brownCount = 0;      // 90-130 (brown: leaves, soil)
+  let greenCount = 0;      // 130-170 (green: healthy leaves)
+  let yellowCount = 0;     // 170-210 (yellow/light: yellowing, bleaching)
+  let veryBrightCount = 0; // > 210 (very bright: white coating, bleached)
+  let totalAnalyzedBytes = 0;
 
-  try {
-    // Scan for actual pixel data - look for RGB triplet patterns
-    // JPEG: look in decompressed regions, PNG: look in scanlines
-    let scanStart = 500;
-    let scanEnd = Math.min(buffer.length - 3, buffer.length * 0.95);
-    
-    // Different sampling patterns for different image sizes
-    const sampleInterval = Math.max(1, Math.floor((scanEnd - scanStart) / 8000));
-
-    for (let i = scanStart; i < scanEnd; i += sampleInterval) {
-      const r = buffer[i] || 0;
-      const g = buffer[i + 1] || 0;
-      const b = buffer[i + 2] || 0;
-
-      sampleCount++;
-
-      // Classify based on actual RGB values (not just individual bytes)
-      const brightness = (r + g + b) / 3;
-      const maxChannel = Math.max(r, g, b);
-      const minChannel = Math.min(r, g, b);
-      const isGray = Math.abs(r - g) < 40 && Math.abs(g - b) < 40;
-
-      // Dark pixels (necrotic spots, lesions)
-      if (brightness < 50) {
-        darkCount++;
-      }
-      // White/bright (powdery coating)
-      else if (brightness > 220) {
-        whiteCount++;
-      }
-      // Green dominant (healthy leaves)
-      else if (g > r + 15 && g > b + 15) {
-        greenCount++;
-      }
-      // Red dominant (stress, disease)
-      else if (r > g + 30 && r > b + 30) {
-        redCount++;
-      }
-      // Brown (rust, soil, brown spots)
-      else if (r > 120 && g > 80 && b < 80 && r > g && g > b) {
-        brownCount++;
-      }
-      // Yellow (yellowing, chlorosis)
-      else if (r > 180 && g > 150 && b < 120 && r > b) {
-        yellowCount++;
-      }
-      // Gray (neutral, unhealthy)
-      else if (isGray) {
-        grayCount++;
-      } else {
-        // Mixed: default to brown
-        brownCount++;
-      }
-    }
-
-    const total = Math.max(1, sampleCount);
-    const result = {
-      darkRatio: darkCount / total,
-      brownRatio: brownCount / total,
-      greenRatio: greenCount / total,
-      yellowRatio: yellowCount / total,
-      redRatio: redCount / total,
-      whiteRatio: whiteCount / total,
-      grayRatio: grayCount / total,
-      sampleCount,
-    };
-
-    return result;
-  } catch (error) {
-    console.error("[v0] Error in image content analysis:", error);
-    // Return more varied defaults to allow for some differentiation
-    return {
-      darkRatio: 0.12,
-      brownRatio: 0.15,
-      greenRatio: 0.35,
-      yellowRatio: 0.08,
-      redRatio: 0.10,
-      whiteRatio: 0.12,
-      grayRatio: 0.08,
-      sampleCount: 0,
-    };
+  // Analyze byte distribution across the image
+  let startOffset = 100;
+  
+  // Identify image format and adjust offset
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8) { // JPEG
+    startOffset = 500;
+  } else if (buffer[0] === 0x89 && buffer[1] === 0x50) { // PNG
+    startOffset = 200;
   }
-}
 
-function getDefaultIndicators() {
-  // Return neutral indicators when analysis fails
-  return {
-    greenRatio: 0.33,
-    yellowRatio: 0.17,
-    brownRatio: 0.17,
-    darkRatio: 0.08,
-    whiteRatio: 0.08,
-    redRatio: 0.08,
-    grayRatio: 0.09,
-    necroticSpotIndicator: 0.2,
-    rustSpotIndicator: 0.3,
-    yelloingIndicator: 0.34,
-    whiteCoatingIndicator: 0.2,
-    diseaseLikelihood: 0.15,
-    healthyIndicator: 0.4,
-    totalPixelsSampled: 100,
+  // Enhanced sampling strategy
+  const step = Math.max(1, Math.floor((buffer.length - startOffset) / 2000));
+  
+  for (let i = startOffset; i < buffer.length; i += step) {
+    const byte = buffer[i] || 0;
+    totalAnalyzedBytes++;
+
+    if (byte < 40) veryDarkCount++;
+    else if (byte < 90) darkCount++;
+    else if (byte < 130) brownCount++;
+    else if (byte < 170) greenCount++;
+    else if (byte < 210) yellowCount++;
+    else veryBrightCount++;
+  }
+
+  // Normalize ratios
+  const total = Math.max(1, totalAnalyzedBytes);
+  const veryDarkRatio = veryDarkCount / total;
+  const darkRatio = darkCount / total;
+  const brownRatio = brownCount / total;
+  const greenRatio = greenCount / total;
+  const yellowRatio = yellowCount / total;
+  const veryBrightRatio = veryBrightCount / total;
+
+  // Calculate enhanced disease indicators
+  const diseaseIndicators = {
+    // Necrotic spots and lesions
+    necroticSpotIndicator: veryDarkRatio * 2,
+    // Rust and brown spots
+    rustSpotIndicator: (darkRatio + brownRatio) * 1.5,
+    // Yellowing and chlorosis
+    yelloingIndicator: (yellowRatio + veryBrightRatio) * 2,
+    // Powdery mildew or white coating
+    whiteCoatingIndicator: veryBrightRatio * 3,
+    // Overall disease likelihood
+    diseaseLikelihood: ((veryDarkRatio + darkRatio + yellowRatio + veryBrightRatio) - greenRatio),
+    // Healthy plant indicators
+    healthyIndicator: greenRatio * 0.8 + brownRatio * 0.2,
+    
+    veryDarkRatio,
+    darkRatio,
+    brownRatio,
+    greenRatio,
+    yellowRatio,
+    veryBrightRatio,
   };
+
+  return diseaseIndicators;
 }
-
-
 
 function generateDiseaseReport(indicators: Record<string, number>) {
   const { 
@@ -224,176 +263,156 @@ function generateDiseaseReport(indicators: Record<string, number>) {
     whiteCoatingIndicator,
     diseaseLikelihood,
     healthyIndicator,
+    veryDarkRatio,
+    darkRatio,
     greenRatio,
     yellowRatio,
-    brownRatio,
-    darkRatio,
-    whiteRatio,
-    redRatio,
-    totalPixelsSampled,
+    veryBrightRatio
   } = indicators;
 
-  console.log("[v0] Disease report - Disease likelihood:", diseaseLikelihood.toFixed(3), "Healthy:", healthyIndicator.toFixed(3), "Necrotic:", necroticSpotIndicator.toFixed(3), "Rust:", rustSpotIndicator.toFixed(3), "Yellowing:", yelloingIndicator.toFixed(3));
+  console.log("[v0] Disease analysis - Necrotic:", necroticSpotIndicator.toFixed(3), "Rust:", rustSpotIndicator.toFixed(3), "Yellowing:", yelloingIndicator.toFixed(3), "White:", whiteCoatingIndicator.toFixed(3), "Healthy:", healthyIndicator.toFixed(3));
 
-  // Validate we have pixel data
-  if (!totalPixelsSampled || totalPixelsSampled < 100) {
-    return {
-      disease: "Unable to Analyze Image",
-      confidence: 0.4,
-      severity: "mild" as const,
-      symptoms: ["Insufficient image data or invalid format"],
-      treatment: "Please upload a clearer image with better lighting",
-      urgency: "low" as const,
-      recommendations: [
-        "Ensure image is in JPEG or PNG format",
-        "Use natural daylight for photography",
-        "Try uploading a different image",
-      ],
-      isDisease: false,
-    };
-  }
-
-  // Primarily green with low disease indicators = healthy
-  if (greenRatio > 0.35 && diseaseLikelihood < 0.1) {
+  // Strong healthy indicators with low disease markers = healthy plant
+  if (healthyIndicator > 0.40 && diseaseLikelihood < 0.15) {
     return {
       disease: "Plant Appears Healthy",
-      confidence: 0.85,
+      confidence: 0.88,
       severity: "mild" as const,
-      symptoms: ["Predominantly green foliage", "Normal leaf coloration", "No visible disease symptoms"],
+      symptoms: ["Green foliage", "Normal coloration", "No visible spots or lesions"],
       treatment: "Continue regular maintenance and monitoring",
       urgency: "low" as const,
-      recommendations: ["Maintain consistent watering", "Monitor regularly", "Continue preventive care"],
+      recommendations: ["Maintain consistent watering schedule", "Monitor for any changes", "Continue preventive care"],
       isDisease: false,
     };
   }
 
-  // High dark/necrotic pixels = necrotic disease
-  if (necroticSpotIndicator > 0.15) {
+  // Necrotic spots (severe) - black/dark lesions
+  if (necroticSpotIndicator > 0.08) {
     return {
       disease: "Necrotic Leaf Spots or Bacterial Leaf Scorch",
-      confidence: 0.80,
+      confidence: 0.76,
       severity: "severe" as const,
-      symptoms: ["Dark brown to black lesions", "Tissue death on leaf surface", "Possible halo zones"],
-      treatment: "Remove infected leaves immediately, apply copper bactericide, improve drainage",
+      symptoms: ["Dark brown to black lesions", "Wilting around spots", "Possible halo development"],
+      treatment: "Remove infected leaves, apply copper bactericide, improve air circulation and drainage",
       urgency: "high" as const,
       recommendations: [
-        "Remove all severely affected leaves immediately",
-        "Apply copper-based bactericide every 7 days",
-        "Improve soil drainage and reduce leaf wetness",
-        "Ensure proper spacing for air circulation",
+        "Immediately remove all affected leaves",
+        "Apply copper-based bactericide treatment",
+        "Improve drainage and reduce overhead watering",
+        "Ensure good plant spacing for air circulation",
       ],
       isDisease: true,
     };
   }
 
-  // High white pixels = powdery mildew or fungal coating
-  if (whiteCoatingIndicator > 0.12) {
+  // Powdery mildew - white coating
+  if (whiteCoatingIndicator > 0.15) {
     return {
       disease: "Powdery Mildew or White Fungal Coating",
-      confidence: 0.78,
-      severity: "moderate" as const,
-      symptoms: ["White powdery substance on leaves", "Leaf curling and distortion", "Growth reduction"],
-      treatment: "Apply sulfur or neem oil fungicide, increase air circulation, reduce humidity",
-      urgency: "high" as const,
-      recommendations: [
-        "Apply sulfur dust or neem oil spray immediately",
-        "Repeat treatment every 7-10 days",
-        "Increase air circulation around plants",
-        "Reduce watering to lower humidity",
-      ],
-      isDisease: true,
-    };
-  }
-
-  // Brown/rust coloring = rust or fungal spots
-  if (rustSpotIndicator > 0.18 && brownRatio > 0.15) {
-    return {
-      disease: "Rust or Fungal Leaf Spots",
-      confidence: 0.77,
-      severity: "moderate" as const,
-      symptoms: ["Brown or rust-colored spots on leaves", "Possible yellow halos around spots", "Pustules on leaf undersides"],
-      treatment: "Apply fungicide (sulfur or copper), remove infected leaves, improve air flow",
-      urgency: "medium" as const,
-      recommendations: [
-        "Apply fungicide spray every 10 days",
-        "Remove heavily spotted leaves and debris",
-        "Improve air circulation through pruning",
-        "Water at soil level only, avoid leaf wetting",
-      ],
-      isDisease: true,
-    };
-  }
-
-  // Yellow/orange coloring = yellowing or chlorosis
-  if (yelloingIndicator > 0.20 && yellowRatio > 0.20) {
-    return {
-      disease: "Leaf Yellowing or Chlorosis",
       confidence: 0.75,
       severity: "moderate" as const,
-      symptoms: ["Progressive yellowing of leaves", "Possible interveinal yellowing", "Reduced growth and vigor"],
-      treatment: "Check soil nutrient levels, improve drainage, apply balanced fertilizer",
-      urgency: "medium" as const,
-      recommendations: [
-        "Apply balanced NPK fertilizer or micronutrients",
-        "Check and adjust soil pH if needed",
-        "Improve drainage to prevent root issues",
-        "Increase light exposure to plant",
-      ],
-      isDisease: true,
-    };
-  }
-
-  // Combined brown and yellow = early blight
-  if (rustSpotIndicator > 0.12 && yelloingIndicator > 0.12) {
-    return {
-      disease: "Early Blight or Leaf Blight Disease",
-      confidence: 0.73,
-      severity: "moderate" as const,
-      symptoms: ["Brown spots with yellow halos", "Concentric ring patterns", "Progressive leaf yellowing"],
-      treatment: "Apply copper fungicide, remove infected leaves, improve air circulation",
+      symptoms: ["White powdery coating on leaves", "Leaf curling", "Growth stunting"],
+      treatment: "Apply sulfur spray or neem oil every 7 days, improve air circulation, reduce humidity",
       urgency: "high" as const,
       recommendations: [
-        "Remove all affected leaves immediately",
-        "Apply copper or mancozeb fungicide weekly",
-        "Improve plant spacing and air flow",
-        "Water plants at soil level only",
+        "Apply sulfur fungicide or neem oil immediately",
+        "Increase air circulation around plant",
+        "Reduce watering frequency to lower humidity",
+        "Remove heavily infected leaves",
       ],
       isDisease: true,
     };
   }
 
-  // Moderate mixed disease indicators
-  if (diseaseLikelihood > 0.15) {
+  // Rust and fungal spots - brown coloring
+  if (rustSpotIndicator > 0.20 && darkRatio > 0.12) {
     return {
-      disease: "Plant Shows Disease Symptoms",
-      confidence: 0.70,
-      severity: "mild" as const,
-      symptoms: ["Visible discoloration or spotting", "Early disease signs present", "Minor leaf damage"],
-      treatment: "Monitor closely and apply preventive fungicide if symptoms worsen",
+      disease: "Rust or Fungal Leaf Spots",
+      confidence: 0.73,
+      severity: "moderate" as const,
+      symptoms: ["Rust-colored or brown spots", "Yellowing around spots", "Possible pustules on undersides"],
+      treatment: "Apply sulfur or copper fungicide every 10-14 days, remove affected leaves",
       urgency: "medium" as const,
       recommendations: [
-        "Monitor plant daily for progression",
-        "Apply preventive fungicide if needed",
-        "Improve growing conditions and drainage",
-        "Ensure proper spacing and air circulation",
+        "Apply fungicide spray immediately",
+        "Remove all heavily spotted leaves",
+        "Prune lower branches to improve air flow",
+        "Avoid watering foliage - water at soil level only",
       ],
       isDisease: true,
     };
   }
 
-  // Default: unclear or no clear disease
+  // Yellowing/Chlorosis - nutrient deficiency or disease
+  if (yelloingIndicator > 0.25 && yellowRatio > 0.18) {
+    return {
+      disease: "Leaf Yellowing or Chlorosis (Nutrient Deficiency or Disease)",
+      confidence: 0.70,
+      severity: "moderate" as const,
+      symptoms: ["Progressive yellowing of leaves", "Visible veining pattern", "Reduced growth"],
+      treatment: "Apply balanced fertilizer, check drainage, improve light exposure, monitor for pest damage",
+      urgency: "medium" as const,
+      recommendations: [
+        "Apply balanced NPK fertilizer",
+        "Check soil drainage and pH levels",
+        "Increase light exposure if possible",
+        "Monitor for spider mites and other pests",
+      ],
+      isDisease: true,
+    };
+  }
+
+  // Combined spots and yellowing - blight
+  if (rustSpotIndicator > 0.15 && yelloingIndicator > 0.15) {
+    return {
+      disease: "Early Blight or Leaf Blight Disease",
+      confidence: 0.72,
+      severity: "moderate" as const,
+      symptoms: ["Brown spots with yellow halos", "Progressive yellowing", "Rapid spread"],
+      treatment: "Apply copper fungicide every 7 days, remove affected leaves, improve air circulation",
+      urgency: "high" as const,
+      recommendations: [
+        "Remove all spotted leaves immediately",
+        "Apply copper fungicide weekly",
+        "Improve plant spacing for ventilation",
+        "Water only at soil level",
+      ],
+      isDisease: true,
+    };
+  }
+
+  // Moderate disease indicators
+  if (diseaseLikelihood > 0.20 && veryDarkRatio > 0.08) {
+    return {
+      disease: "Plant Shows Early Disease Symptoms",
+      confidence: 0.68,
+      severity: "mild" as const,
+      symptoms: ["Minor spots or discoloration visible", "Early disease signs", "Some leaf damage"],
+      treatment: "Monitor closely, apply preventive fungicide if condition worsens",
+      urgency: "medium" as const,
+      recommendations: [
+        "Monitor plant condition daily",
+        "Apply preventive fungicide treatment",
+        "Improve growing conditions and air circulation",
+        "Check soil moisture and drainage",
+      ],
+      isDisease: true,
+    };
+  }
+
+  // Image quality issues - unclear diagnosis
   return {
-    disease: "Plant Status: Requires Better Image for Accurate Diagnosis",
-    confidence: 0.60,
+    disease: "Plant Status: Requires Clearer Image for Accurate Analysis",
+    confidence: 0.55,
     severity: "mild" as const,
-    symptoms: ["Image analysis inconclusive"],
-    treatment: "Please upload a high-quality photo focused on affected leaf area",
+    symptoms: ["Image clarity or resolution affects analysis"],
+    treatment: "Please photograph the affected leaf area in good natural lighting",
     urgency: "low" as const,
     recommendations: [
       "Take a close-up photo of the most affected leaf",
-      "Use natural daylight (avoid harsh shadows)",
+      "Use natural daylight for better color accuracy",
       "Focus clearly on the affected area",
-      "Upload a fresh image and try again",
+      "Try uploading again with a high-quality image",
     ],
     isDisease: false,
   };

@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { StatsGrid } from "@/components/dashboard/stats-grid"
 import { WeatherCard } from "@/components/dashboard/weather-card"
@@ -16,18 +17,18 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Sprout, Activity } from "lucide-react"
 
 export default async function DashboardPage() {
-  // Use demo data instead of database queries
-  const farms = [
-    { id: "1", name: "Main Farm", location: "Iowa", acreage: 250 },
-    { id: "2", name: "North Field", location: "Illinois", acreage: 150 },
-  ]
-  
-  const crops = [
-    { id: "1", name: "Corn", status: "active", farm_id: "1", farms: farms[0] },
-    { id: "2", name: "Soybeans", status: "active", farm_id: "2", farms: farms[1] },
-  ]
-  
-  const unreadAlerts = 2
+  const supabase = await createClient()
+
+  const { data: farms } = await supabase.from("farms").select("*").order("created_at", { ascending: false })
+  const { data: crops } = await supabase
+    .from("crops")
+    .select("*, farms(*)")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+  const { count: unreadAlerts } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_read", false)
 
   const farmCount = farms?.length || 0
   const cropCount = crops?.length || 0

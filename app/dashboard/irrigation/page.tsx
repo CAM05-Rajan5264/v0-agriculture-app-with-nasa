@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { IrrigationCard } from "@/components/dashboard/irrigation-card"
 import { LogIrrigationDialog } from "@/components/irrigation/log-irrigation-dialog"
@@ -11,33 +12,22 @@ import { Button } from "@/components/ui/button"
 import type { IrrigationEvent } from "@/lib/types"
 
 export default async function IrrigationPage() {
-  // Use demo crops instead of database
-  const crops = [
-    { 
-      id: "1", 
-      name: "Corn", 
-      status: "active", 
-      farm_id: "1", 
-      variety: "Pioneer",
-      farms: { id: "1", name: "Main Farm", latitude: 41.8781, longitude: -87.6298 } 
-    },
-    { 
-      id: "2", 
-      name: "Soybeans", 
-      status: "active", 
-      farm_id: "2", 
-      variety: "Roundup Ready",
-      farms: { id: "2", name: "North Field", latitude: 40.7128, longitude: -88.2434 } 
-    },
-  ]
+  const supabase = await createClient()
 
-  const unreadAlerts = 2
+  const { data: crops } = await supabase.from("crops").select("*, farms(*)").eq("status", "active")
 
-  // Use demo irrigation events instead of database
-  const allIrrigationEvents = [
-    { id: "1", crop_id: "1", irrigated_at: new Date().toISOString(), amount: 25, unit: "mm" },
-    { id: "2", crop_id: "2", irrigated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), amount: 30, unit: "mm" },
-  ]
+  const { count: unreadAlerts } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .eq("is_read", false)
+
+  // Fetch irrigation events for all crops
+  const cropIds = (crops || []).map((c) => c.id)
+  const { data: allIrrigationEvents } = await supabase
+    .from("irrigation_events")
+    .select("*")
+    .in("crop_id", cropIds.length > 0 ? cropIds : [""])
+    .order("irrigated_at", { ascending: false })
 
   // Group events by crop
   const eventsByCrop: Record<string, IrrigationEvent[]> = {}
