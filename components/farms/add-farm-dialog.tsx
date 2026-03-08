@@ -21,7 +21,6 @@ export function AddFarmDialog() {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const [formData, setFormData] = useState({
     name: "",
