@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { requestPasswordReset } from "@/app/actions/auth-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,7 +17,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClient()
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,16 +24,20 @@ export default function ForgotPasswordPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      })
+      console.log("[v0] Submitting password reset request for:", email)
+      const result = await requestPasswordReset(email)
 
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.message)
+      }
 
+      console.log("[v0] Password reset email sent successfully")
       setSuccess(true)
       setEmail("")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Failed to send reset email")
+      const errorMessage = error instanceof Error ? error.message : "Failed to send reset email"
+      console.error("[v0] Password reset error:", errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

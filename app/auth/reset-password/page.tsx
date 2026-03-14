@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { resetPassword } from "@/app/actions/auth-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,23 +22,15 @@ export default function ResetPasswordPage() {
   const [isValidLink, setIsValidLink] = useState(true)
   const [passwordStrength, setPasswordStrength] = useState<"weak" | "fair" | "good" | "strong">("weak")
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    // Check if user has valid reset session
-    const checkSession = async () => {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (!data.session) {
-          setIsValidLink(false)
-        }
-      } catch {
-        setIsValidLink(false)
-      }
+    // Check if URL has reset token
+    const params = new URLSearchParams(window.location.search)
+    if (!params.get("token")) {
+      console.log("[v0] No reset token found in URL")
+      setIsValidLink(false)
     }
-
-    checkSession()
-  }, [supabase.auth])
+  }, [])
 
   const calculatePasswordStrength = (pwd: string) => {
     if (pwd.length < 6) return "weak"
@@ -68,10 +60,17 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      console.log("[v0] Submitting password reset")
+      const params = new URLSearchParams(window.location.search)
+      const token = params.get("token") || ""
+      
+      const result = await resetPassword(token, password)
 
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.message)
+      }
 
+      console.log("[v0] Password reset successful")
       setSuccess(true)
       setPassword("")
       setConfirmPassword("")
@@ -81,7 +80,9 @@ export default function ResetPasswordPage() {
         router.push("/auth/login")
       }, 2000)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Failed to reset password")
+      const errorMessage = error instanceof Error ? error.message : "Failed to reset password"
+      console.error("[v0] Password reset error:", errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
