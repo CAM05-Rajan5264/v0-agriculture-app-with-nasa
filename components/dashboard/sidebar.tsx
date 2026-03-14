@@ -20,7 +20,6 @@ import {
   Satellite,
   AlertCircle,
   Activity,
-  BarChart3,
 } from "lucide-react"
 
 const navigation = [
@@ -30,7 +29,6 @@ const navigation = [
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
-  { name: "Yield Forecast", href: "/dashboard/yield-forecast", icon: BarChart3 },
   { name: "Satellite", href: "/dashboard/satellite", icon: Satellite },
   { name: "Disease Detection", href: "/dashboard/disease-detection", icon: AlertCircle },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },

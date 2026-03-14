@@ -90,63 +90,6 @@ function getDateRange(daysBack: number): { start: string; end: string } {
   }
 }
 
-export async function fetchPOWERData(
-  latitude: number,
-  longitude: number,
-  startDate: string,
-  endDate: string,
-): Promise<{
-  temperature: number
-  humidity: number
-  rainfall: number
-  solarRadiation: number
-}> {
-  const data = await fetchNASAPowerData({
-    parameters: "T2M,RH2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN",
-    community: "AG",
-    longitude,
-    latitude,
-    start: startDate.replace(/-/g, ""),
-    end: endDate.replace(/-/g, ""),
-    format: "JSON",
-  })
-
-  if (data?.properties?.parameter) {
-    const params = data.properties.parameter
-    const tempData = params.T2M || {}
-    const dates = Object.keys(tempData)
-      .filter((d) => tempData[d] !== -999)
-      .sort()
-      .reverse()
-
-    if (dates.length > 0) {
-      const latestDate = dates[0]
-      const temp = params.T2M?.[latestDate]
-      const humidity = params.RH2M?.[latestDate]
-      const precip = params.PRECTOTCORR?.[latestDate]
-      const solar = params.ALLSKY_SFC_SW_DWN?.[latestDate]
-
-      return {
-        temperature: temp !== undefined && temp !== -999 ? temp : 22,
-        humidity: humidity !== undefined && humidity !== -999 ? humidity : 60,
-        rainfall: precip !== undefined && precip !== -999 ? precip : 5,
-        solarRadiation: solar !== undefined && solar !== -999 ? solar : 200,
-      }
-    }
-  }
-
-  console.log("[v0] fetchPOWERData fallback triggered")
-  const latVariation = Math.sin(latitude * 0.1) * 5
-  const lngVariation = Math.cos(longitude * 0.1) * 3
-
-  return {
-    temperature: 22 + latVariation + lngVariation,
-    humidity: 55 + Math.abs(latVariation) * 2,
-    rainfall: Math.max(0, lngVariation + 2),
-    solarRadiation: 200 + latVariation * 10,
-  }
-}
-
 export async function getWeatherData(latitude: number, longitude: number): Promise<NASAWeatherData> {
   const { start, end } = getDateRange(7)
 

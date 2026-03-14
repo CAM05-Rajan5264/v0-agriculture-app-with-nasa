@@ -11,14 +11,14 @@ In the v0 chat sidebar, click on the **Vars** tab on the left side.
 Click "Add variable" and enter:
 
 **Variable Name (Key):**
-\`\`\`
+```
 PLANT_ID_API_KEY
-\`\`\`
+```
 
 **Variable Value:**
-\`\`\`
+```
 LUb1izCbjL5YpagT7coo0xddOqkphSJbIPpv89og4DG4K8oBVB
-\`\`\`
+```
 
 ### Step 3: Save and Deploy
 - Click Save

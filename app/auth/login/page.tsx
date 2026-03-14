@@ -23,29 +23,18 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      console.log("[v0] Creating Supabase client...")
-      console.log("[v0] NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
-      console.log("[v0] NEXT_PUBLIC_SUPABASE_ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-      
-      const supabase = createClient()
-      console.log("[v0] Supabase client created, attempting sign in...")
-      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
-      console.log("[v0] Sign in response error:", error)
       if (error) throw error
-      
-      console.log("[v0] Sign in successful, redirecting...")
       router.push("/dashboard")
     } catch (error: unknown) {
-      console.log("[v0] Login error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)

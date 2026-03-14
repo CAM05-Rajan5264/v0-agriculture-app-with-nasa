@@ -31,6 +31,14 @@ interface DiseaseAnalysisResult {
   urgency: "low" | "medium" | "high" | "critical"
   recommendations: string[]
   isDisease: boolean
+  plantName?: string
+  plantCommonNames?: string[]
+  plantDetails?: {
+    description?: string
+    url?: string
+    genus?: string
+    species?: string
+  }
   rawResponse?: PlantIdResponse
 }
 
@@ -311,6 +319,18 @@ export async function analyzePlantIdResponse(
   // Check if it's a disease
   const diseaseInfo = mapDiseaseToTreatment(diseaseName);
 
+  // Extract plant identification details
+  const plantCommonNames = topSuggestion.details?.common_names || [];
+  const plantGenus = topSuggestion.details?.taxonomy?.genus;
+  const plantSpecies = topSuggestion.details?.taxonomy?.species;
+
+  const plantDetails = {
+    description: topSuggestion.details?.description,
+    url: topSuggestion.details?.url,
+    genus: plantGenus,
+    species: plantSpecies,
+  };
+
   if (diseaseInfo) {
     return {
       disease: diseaseInfo.disease || diseaseName,
@@ -326,13 +346,16 @@ export async function analyzePlantIdResponse(
         "Consider consulting a plant specialist",
       ],
       isDisease: true,
+      plantName: diseaseName,
+      plantCommonNames,
+      plantDetails,
       rawResponse: data,
     };
   }
 
   // Plant appears healthy or species identified but no disease
   return {
-    disease: `Plant identified as ${diseaseName}`,
+    disease: `Plant appears healthy`,
     confidence: probability,
     severity: "mild",
     symptoms: ["Plant appears to be healthy or not showing disease symptoms"],
@@ -345,6 +368,9 @@ export async function analyzePlantIdResponse(
       "Ensure adequate sunlight",
     ],
     isDisease: false,
+    plantName: diseaseName,
+    plantCommonNames,
+    plantDetails,
     rawResponse: data,
   };
 }
