@@ -10,10 +10,14 @@ The AI Plant Disease Detection feature uses the **plant.id API** - a free, power
 
 The plant.id API key has been provided. You need to add it to your environment variables:
 
-1. Go to your project settings (in the Vars section of v0)
-2. Add a new environment variable:
-   - **Key**: `PLANT_ID_API_KEY`
-   - **Value**: `LUb1izCbjL5YpagT7coo0xddOqkphSJbIPpv89og4DG4K8oBVB`
+1. Go to your project settings (⚙️ gear icon in top right)
+2. Click **Vars** section
+3. Click **Add New**
+4. Add a new environment variable:
+   - **Name**: `PLANT_ID_API_KEY`
+   - **Value**: `2b106T6wt500zga8mnEmtoDu`
+5. Click **Save**
+6. Wait 30 seconds for the environment to reload
 
 ### 2. How Disease Detection Works
 
@@ -68,23 +72,74 @@ Disease detection results are stored in the `disease_detections` table with:
 - `treatment_urgency`: Urgency level (low, medium, high, critical)
 - `raw_analysis`: Complete API response
 
-### 6. Troubleshooting
+### 6. Comprehensive Error Handling
 
-**"API key not configured" error**:
-- Ensure you've added `PLANT_ID_API_KEY` to your environment variables
-- Verify the key is correct
-- Redeploy or restart your application
+The system includes robust error detection and graceful fallback mechanisms:
 
-**"Image analysis failed" error**:
-- Check your internet connection
-- Try uploading a different image
-- Ensure the image quality is good
-- Verify the file size is under 5MB
+#### Error Types & Solutions:
 
-**"Plant not identified" message**:
-- The image may not be clear enough
-- Try retaking the photo in better lighting
-- Ensure the plant is clearly visible in the frame
+**API_KEY_MISSING** - "API Key Not Configured"
+- [ ] Open project settings (⚙️ icon)
+- [ ] Go to Vars section
+- [ ] Add: `PLANT_ID_API_KEY` = `2b106T6wt500zga8mnEmtoDu`
+- [ ] Wait 30 seconds for reload
+- [ ] Hard refresh page (Ctrl+Shift+R)
+
+**INVALID_API_KEY** - "Invalid API Key"
+- [ ] Verify the key is exactly: `2b106T6wt500zga8mnEmtoDu`
+- [ ] Check for extra spaces or typos
+- [ ] Ensure no special characters
+- [ ] Update in Vars section
+
+**IMAGE_FORMAT_ERROR** - "Invalid image format"
+- [ ] Use JPG, PNG, or GIF format
+- [ ] Image must be under 5MB
+- [ ] Try a different image format
+- [ ] Ensure image is not corrupted
+
+**NOT_A_PLANT** - "Not a plant detected"
+- [ ] Upload an image containing a plant
+- [ ] Ensure plant/leaf is clearly visible
+- [ ] Try better lighting (natural daylight)
+- [ ] Focus on the affected area
+
+**UNABLE_TO_IDENTIFY** - "Unable to identify plant"
+- [ ] Take a clearer image with better focus
+- [ ] Improve lighting conditions
+- [ ] Use higher resolution image
+- [ ] Try a different angle
+
+**NETWORK_ERROR** - Network/connectivity issues
+- [ ] Check your internet connection
+- [ ] Try again in 1-2 minutes
+- [ ] Check if plant.id API is operational
+- [ ] Try from different network if possible
+
+**RATE_LIMIT** - "Rate limit exceeded"
+- [ ] Wait 5-10 minutes before retrying
+- [ ] Check your API usage on plant.id dashboard
+- [ ] Consider upgrading plan for higher limits
+
+**TIMEOUT** - Request took too long
+- [ ] Try with a smaller image file
+- [ ] Check internet speed/stability
+- [ ] Wait a moment and retry
+- [ ] Try from different network
+
+#### Automatic Fallback System:
+If the API is unavailable, the system automatically uses local image analysis:
+- ✅ Basic plant health assessment
+- ✅ Color-based disease detection
+- ✅ No API key required
+- ✅ Graceful degradation
+
+#### Browser Console Debugging:
+Open DevTools (F12) → Console tab to see detailed logs:
+- `[v0] API Key check - Key exists: true/false`
+- `[v0] Sending image to plant.id API...`
+- `[v0] API Status: 200 OK` (success) or error codes
+- `[v0] Plant probability: 0.95` (confidence)
+- Error messages prefixed with `[v0]` for easy tracking
 
 ### 7. Free Tier Benefits
 
