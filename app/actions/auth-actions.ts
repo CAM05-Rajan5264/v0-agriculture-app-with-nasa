@@ -17,11 +17,12 @@ export async function loginUser(email: string, password: string) {
     })
 
     if (error) {
-      console.error("[v0] Login error:", error.message)
-      return { success: false, message: error.message }
+      const errorMessage = error?.message || "Login failed"
+      console.error("[v0] Login error:", errorMessage)
+      return { success: false, message: errorMessage }
     }
 
-    if (!data.session) {
+    if (!data?.session) {
       console.error("[v0] No session created after login")
       return { success: false, message: "Login failed. No session created." }
     }
@@ -29,8 +30,13 @@ export async function loginUser(email: string, password: string) {
     console.log("[v0] User logged in successfully")
     return { success: true, message: "Login successful" }
   } catch (error: unknown) {
-    console.error("[v0] Login failed:", error)
-    const message = error instanceof Error ? error.message : "An error occurred during login"
+    let message = "An error occurred during login"
+    if (error instanceof Error) {
+      message = error.message
+    } else if (typeof error === "string") {
+      message = error
+    }
+    console.error("[v0] Login failed:", message)
     return { success: false, message }
   }
 }
@@ -48,15 +54,21 @@ export async function requestPasswordReset(email: string) {
     })
 
     if (error) {
-      console.error("[v0] Password reset error:", error)
-      throw error
+      const errorMessage = error?.message || "Failed to send password reset email"
+      console.error("[v0] Password reset error:", errorMessage)
+      return { success: false, message: errorMessage }
     }
 
     console.log("[v0] Password reset email sent successfully")
     return { success: true, message: "Password reset email sent successfully" }
   } catch (error: unknown) {
-    console.error("[v0] Password reset failed:", error)
-    const message = error instanceof Error ? error.message : "Failed to send password reset email"
+    let message = "Failed to send password reset email"
+    if (error instanceof Error) {
+      message = error.message
+    } else if (typeof error === "string") {
+      message = error
+    }
+    console.error("[v0] Password reset failed:", message)
     return { success: false, message }
   }
 }
@@ -74,15 +86,21 @@ export async function resetPassword(token: string, newPassword: string) {
     })
 
     if (error) {
-      console.error("[v0] Password update error:", error)
-      throw error
+      const errorMessage = error?.message || "Failed to reset password"
+      console.error("[v0] Password update error:", errorMessage)
+      return { success: false, message: errorMessage }
     }
 
     console.log("[v0] Password updated successfully")
     return { success: true, message: "Password updated successfully" }
   } catch (error: unknown) {
-    console.error("[v0] Password reset failed:", error)
-    const message = error instanceof Error ? error.message : "Failed to reset password"
+    let message = "Failed to reset password"
+    if (error instanceof Error) {
+      message = error.message
+    } else if (typeof error === "string") {
+      message = error
+    }
+    console.error("[v0] Password reset failed:", message)
     return { success: false, message }
   }
 }
