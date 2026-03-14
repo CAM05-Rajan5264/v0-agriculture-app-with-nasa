@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { loginUser } from "@/app/actions/auth-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,19 +23,26 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-      router.push("/dashboard")
+      console.log("[v0] Submitting login for:", email)
+      const result = await loginUser(email, password)
+
+      if (!result.success) {
+        throw new Error(result.message)
+      }
+
+      console.log("[v0] Login successful, redirecting to dashboard")
+      // Use a small delay to allow session to be established
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      const errorMessage = error instanceof Error ? error.message : "An error occurred"
+      console.error("[v0] Login error:", errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
