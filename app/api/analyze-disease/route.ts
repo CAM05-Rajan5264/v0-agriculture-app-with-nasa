@@ -1,27 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
-import { analyzePlantIdResponse } from "@/lib/plant-disease-api";
+import { analyzeKindwiseResponse } from "@/lib/plant-disease-api";
 import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 60; // Allow up to 60 seconds for analysis
 
-interface PlantIdResponse {
-  suggestions: {
+interface KindwiseResult {
+  disease: {
     id: string
     name: string
     probability: number
-    similar_images?: string[]
     details?: {
       description?: string
       url?: string
       common_names?: string[]
+      symptoms?: string[]
+      treatment?: string
+      severity?: string
+      type?: string
+      spreading?: string
       taxonomy?: {
         genus?: string
         species?: string
       }
     }
   }[]
-  is_plant: {
-    probability: number
+  crop?: {
+    id: string
+    name: string
   }
 }
 
@@ -61,43 +66,38 @@ export async function POST(request: NextRequest) {
 
     let analysisResult;
 
-    // Use plant.id API for disease detection
-    // Try both naming conventions for the API key
-    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY;
+    // Use Kindwise Crop Health API for disease detection
+    const apiKey = process.env.KINDWISE_API_KEY;
     
-    console.log("[v0] API Key check - Key exists:", !!apiKey);
-    console.log("[v0] API Key name:", apiKey ? "PLANT_ID_API_KEY or PLANTID_API_KEY" : "NOT SET");
-    if (apiKey) {
-      console.log("[v0] API Key length:", apiKey.length);
-      console.log("[v0] API Key starts with:", apiKey.substring(0, 10));
-      console.log("[v0] API Key ends with:", apiKey.substring(apiKey.length - 10));
-    }
+    console.log("[v0] Kindwise API Key check - Key exists:", !!apiKey);
     
     if (!apiKey) {
-      console.log("[v0] ERROR: Plant ID API key not configured");
-      console.log("[v0] Please add PLANT_ID_API_KEY to environment variables");
+      console.log("[v0] ERROR: Kindwise API key not configured");
+      console.log("[v0] Please add KINDWISE_API_KEY to environment variables");
       console.log("[v0] Using fallback analysis");
       analysisResult = getFallbackAnalysis("API_KEY_MISSING");
     } else {
       try {
-        console.log("[v0] Sending image to plant.id API for analysis...");
+        console.log("[v0] Sending image to Kindwise Crop API for analysis...");
         console.log("[v0] Image size:", base64Image.length, "bytes");
         
+        // Remove data URI prefix for Kindwise API
+        const base64Only = base64Image.split(",")[1] || base64Image;
+        
         const requestBody = {
-          images: [base64Image],
-          modifiers: ["similar_images"],
-          plant_details: ["description", "url", "common_names", "taxonomy"],
+          images: [base64Only],
+          details: ["treatment", "description", "url", "taxonomy", "symptoms", "severity", "spreading"]
         };
 
-        console.log("[v0] Request headers - Api-Key present:", !!apiKey);
+        console.log("[v0] Request to Kindwise API");
         console.log("[v0] Request body size:", JSON.stringify(requestBody).length, "bytes");
         
         const startTime = Date.now();
-        const response = await fetch("https://api.plant.id/v2/identify", {
+        const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Api-Key": apiKey,
+            "Authorization": `Bearer ${apiKey}`,
           },
           body: JSON.stringify(requestBody),
         });
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("[v0] Plant ID API error:", response.status, errorText);
+          console.error("[v0] Kindwise API error:", response.status, errorText);
           
           // Log specific error scenarios
           if (response.status === 401) {
@@ -125,11 +125,11 @@ export async function POST(request: NextRequest) {
             analysisResult = getFallbackAnalysis("API_ERROR");
           }
         } else {
-          const data: PlantIdResponse = await response.json();
-          console.log("[v0] Plant ID API response received successfully");
-          console.log("[v0] Suggestions count:", data.suggestions?.length);
-          console.log("[v0] Plant probability:", data.is_plant?.probability);
-          analysisResult = await analyzePlantIdResponse(data);
+          const data: KindwiseResult = await response.json();
+          console.log("[v0] Kindwise API response received successfully");
+          console.log("[v0] Diseases found:", data.disease?.length);
+          console.log("[v0] Crop detected:", data.crop?.name);
+          analysisResult = await analyzeKindwiseResponse(data);
         }
       } catch (apiError) {
         console.error("[v0] Plant ID API failed:", apiError);

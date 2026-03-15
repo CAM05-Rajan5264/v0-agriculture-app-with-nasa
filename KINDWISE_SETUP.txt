@@ -1,0 +1,175 @@
+KINDWISE CROP HEALTH API INTEGRATION
+=====================================
+
+API Key: LUb1izCbjL5YpagT7coo0xddOqkphSJbIPpv89og4DG4K8oBVB
+API Endpoint: https://crop.kindwise.com/api/v1/identification
+
+SETUP INSTRUCTIONS
+==================
+
+1. Add Environment Variable
+   - Go to Settings (⚙️ icon) → Vars
+   - Add: KINDWISE_API_KEY
+   - Value: LUb1izCbjL5YpagT7coo0xddOqkphSJbIPpv89og4DG4K8oBVB
+   - Click Save
+
+2. Wait for Environment Reload
+   - Wait 30-60 seconds for the environment to reload
+   - Hard refresh page (Ctrl+Shift+R)
+
+3. Test the Integration
+   - Navigate to /dashboard/disease-detection
+   - Upload a plant/crop image
+   - Click "Analyze"
+   - Watch browser console (F12) for [v0] logs
+
+KINDWISE API FEATURES
+====================
+
+✅ 23 Major Crops Support:
+   - Wheat, Tomato, Tobacco, Tea, Sugarcane
+   - Soybean, Rice, Potato, Onion, Oil palm
+   - Grapevine, Garlic, Eggplant, Cucumber
+   - Cotton, Corn, Coffee, Cocoa, Citrus
+   - Cassava, Barley, Banana, Apple
+
+✅ 288+ Diseases & Pests Covered:
+   - Fungal diseases (powdery mildew, early blight, etc.)
+   - Bacterial diseases (leaf spots, fire blight, etc.)
+   - Viral diseases (mosaic viruses, bunchy top, etc.)
+   - Pests (aphids, beetles, grasshoppers, etc.)
+   - Nutrient deficiencies
+
+✅ Comprehensive Details:
+   - Symptoms identification
+   - Severity levels (mild, moderate, severe, critical)
+   - Treatment recommendations
+   - Spreading information
+   - Taxonomy data (genus, species)
+   - Description & URLs
+   - Multi-language support
+
+WHAT'S INCLUDED IN RESPONSE
+===========================
+
+For each detected disease:
+- Disease name and confidence score
+- Severity level
+- Symptoms list
+- Treatment instructions
+- Disease spreading information
+- Scientific taxonomy
+- Description and reference URLs
+- Common names
+
+INTEGRATION DETAILS
+===================
+
+API Endpoint: POST https://crop.kindwise.com/api/v1/identification
+
+Request Headers:
+- Content-Type: application/json
+- Authorization: Bearer {KINDWISE_API_KEY}
+
+Request Body:
+{
+  "images": ["base64_encoded_image"],
+  "details": ["treatment", "description", "url", "taxonomy", "symptoms", "severity", "spreading"]
+}
+
+Response Format:
+{
+  "disease": [
+    {
+      "id": "string",
+      "name": "disease_name",
+      "probability": 0.95,
+      "details": {
+        "description": "...",
+        "url": "...",
+        "symptoms": [...],
+        "treatment": "...",
+        "severity": "...",
+        "spreading": "...",
+        "taxonomy": {
+          "genus": "...",
+          "species": "..."
+        }
+      }
+    }
+  ],
+  "crop": {
+    "id": "string",
+    "name": "crop_name"
+  }
+}
+
+TROUBLESHOOTING
+===============
+
+401 Unauthorized:
+- API key is incorrect or expired
+- Environment variable not set
+- Check KINDWISE_API_KEY in Vars section
+
+Rate Limit Exceeded:
+- Wait 5-10 minutes
+- Check API usage quota
+- Consider upgrading plan
+
+Image Too Large:
+- Resize image to smaller dimensions
+- Ensure file is under 10MB
+- Try JPEG format instead
+
+No Diseases Found:
+- Image may not be clear enough
+- Try different angle or lighting
+- Ensure crop is visible in image
+
+BROWSER CONSOLE DEBUGGING
+=========================
+
+Open DevTools (F12) → Console tab to see detailed logs:
+
+[v0] Kindwise API Key check - Key exists: true/false
+[v0] Sending image to Kindwise Crop API for analysis...
+[v0] Request to Kindwise API
+[v0] API response received in XXX ms
+[v0] API Status: 200 OK
+[v0] Diseases found: X
+[v0] Crop detected: crop_name
+[v0] Analyzing Kindwise response...
+
+FALLBACK SYSTEM
+===============
+
+If Kindwise API is unavailable:
+✅ System automatically falls back to local analysis
+✅ Basic plant health assessment still works
+✅ Color-based detection available
+✅ No API key required for fallback
+✅ Graceful degradation guaranteed
+
+FEATURE COMPARISON
+==================
+
+Kindwise vs plant.id:
+
+Kindwise (crop-focused):
+- 23 major crops
+- 288 diseases/pests
+- Farmer-focused details
+- EPPO database integration
+- Symptom details included
+- Severity assessment included
+
+plant.id (broader):
+- All plants (indoor, ornamental, etc.)
+- 548 diseases
+- Individual plant enthusiasts
+- Broader scope
+- No symptom details
+- No severity assessment
+
+For farm management: Kindwise is recommended!

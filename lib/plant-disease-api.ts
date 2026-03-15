@@ -1,5 +1,5 @@
-// Free plant disease detection APIs
-// Using plant.id API (free tier) for real ML-based plant disease detection
+// Crop disease detection APIs
+// Using Kindwise Crop Health API for real ML-based crop disease detection
 
 interface PlantIdResponse {
   suggestions: {
@@ -22,6 +22,32 @@ interface PlantIdResponse {
   }
 }
 
+interface KindwiseResult {
+  disease: {
+    id: string
+    name: string
+    probability: number
+    details?: {
+      description?: string
+      url?: string
+      common_names?: string[]
+      symptoms?: string[]
+      treatment?: string
+      severity?: string
+      type?: string
+      spreading?: string
+      taxonomy?: {
+        genus?: string
+        species?: string
+      }
+    }
+  }[]
+  crop?: {
+    id: string
+    name: string
+  }
+}
+
 interface DiseaseAnalysisResult {
   disease: string
   confidence: number
@@ -31,6 +57,7 @@ interface DiseaseAnalysisResult {
   urgency: "low" | "medium" | "high" | "critical"
   recommendations: string[]
   isDisease: boolean
+  cropName?: string
   plantName?: string
   plantCommonNames?: string[]
   plantDetails?: {
@@ -39,7 +66,7 @@ interface DiseaseAnalysisResult {
     genus?: string
     species?: string
   }
-  rawResponse?: PlantIdResponse
+  rawResponse?: PlantIdResponse | KindwiseResult
 }
 
 // Disease database mapping to treatment information
@@ -273,6 +300,90 @@ function mapDiseaseToTreatment(
   }
 
   return null;
+}
+
+export async function analyzeKindwiseResponse(
+  data: KindwiseResult
+): Promise<DiseaseAnalysisResult> {
+  console.log("[v0] Analyzing Kindwise response...");
+
+  if (!data.disease || data.disease.length === 0) {
+    console.log("[v0] No disease detected in Kindwise response");
+    return {
+      disease: "No health issues detected",
+      confidence: 0.95,
+      severity: "mild",
+      symptoms: ["Plant appears to be healthy"],
+      treatment: "Continue regular maintenance and monitoring",
+      urgency: "low",
+      recommendations: [
+        "Monitor the crop regularly",
+        "Maintain proper watering schedule",
+        "Ensure good air circulation",
+      ],
+      isDisease: false,
+      cropName: data.crop?.name,
+      rawResponse: data,
+    };
+  }
+
+  // Get top disease result
+  const topDisease = data.disease[0];
+  const diseaseName = topDisease.name || "Unknown disease";
+  const probability = topDisease.probability || 0;
+
+  console.log("[v0] Top disease:", diseaseName, "Probability:", probability);
+
+  // Extract disease details
+  const details = topDisease.details || {};
+  const symptoms = details.symptoms || [];
+  const treatment = details.treatment || "Consult with an agricultural specialist";
+  const severity = (details.severity || "moderate") as "mild" | "moderate" | "severe" | "critical";
+  const description = details.description || "";
+  const spreadingInfo = details.spreading || "";
+
+  // Map severity to urgency
+  const urgencyMap: Record<string, "low" | "medium" | "high" | "critical"> = {
+    mild: "low",
+    moderate: "medium",
+    severe: "high",
+    critical: "critical",
+  };
+  const urgency = urgencyMap[severity] || "medium";
+
+  // Build recommendations
+  const recommendations: string[] = [];
+  if (severity === "critical" || severity === "severe") {
+    recommendations.push("Take immediate action to prevent spread");
+  }
+  if (symptoms.length > 0) {
+    recommendations.push("Monitor affected areas closely");
+  }
+  if (spreadingInfo) {
+    recommendations.push("Implement isolation measures to prevent spreading");
+  }
+  recommendations.push("Apply recommended treatment immediately");
+  recommendations.push("Consult with local agricultural extension service");
+
+  return {
+    disease: diseaseName,
+    confidence: probability,
+    severity,
+    symptoms,
+    treatment,
+    urgency,
+    recommendations,
+    isDisease: true,
+    cropName: data.crop?.name,
+    plantName: diseaseName,
+    plantDetails: {
+      description,
+      url: details.url,
+      genus: details.taxonomy?.genus,
+      species: details.taxonomy?.species,
+    },
+    rawResponse: data,
+  };
 }
 
 export async function analyzePlantIdResponse(
