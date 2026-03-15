@@ -67,6 +67,11 @@ export async function POST(request: NextRequest) {
     
     console.log("[v0] API Key check - Key exists:", !!apiKey);
     console.log("[v0] API Key name:", apiKey ? "PLANT_ID_API_KEY or PLANTID_API_KEY" : "NOT SET");
+    if (apiKey) {
+      console.log("[v0] API Key length:", apiKey.length);
+      console.log("[v0] API Key starts with:", apiKey.substring(0, 10));
+      console.log("[v0] API Key ends with:", apiKey.substring(apiKey.length - 10));
+    }
     
     if (!apiKey) {
       console.log("[v0] ERROR: Plant ID API key not configured");
@@ -78,6 +83,15 @@ export async function POST(request: NextRequest) {
         console.log("[v0] Sending image to plant.id API for analysis...");
         console.log("[v0] Image size:", base64Image.length, "bytes");
         
+        const requestBody = {
+          images: [base64Image],
+          modifiers: ["similar_images"],
+          plant_details: ["description", "url", "common_names", "taxonomy"],
+        };
+
+        console.log("[v0] Request headers - Api-Key present:", !!apiKey);
+        console.log("[v0] Request body size:", JSON.stringify(requestBody).length, "bytes");
+        
         const startTime = Date.now();
         const response = await fetch("https://api.plant.id/v2/identify", {
           method: "POST",
@@ -85,11 +99,7 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
             "Api-Key": apiKey,
           },
-          body: JSON.stringify({
-            images: [base64Image],
-            modifiers: ["similar_images"],
-            plant_details: ["description", "url", "common_names", "taxonomy"],
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const responseTime = Date.now() - startTime;
