@@ -90,14 +90,17 @@ export async function POST(request: NextRequest) {
         };
 
         console.log("[v0] Request to Kindwise API");
+        console.log("[v0] API Key present:", !!apiKey);
+        console.log("[v0] API Key length:", apiKey.length);
         console.log("[v0] Request body size:", JSON.stringify(requestBody).length, "bytes");
+        console.log("[v0] Using Api-Key header format");
         
         const startTime = Date.now();
         const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
+            "Api-Key": apiKey,
           },
           body: JSON.stringify(requestBody),
         });
