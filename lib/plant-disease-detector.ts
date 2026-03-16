@@ -11,6 +11,26 @@ interface PlantDiseaseAnalysis {
   recommendations: string[]
   isDisease: boolean
   cropType?: string
+  cropIdentification?: {
+    probable_crops: string[]
+    confidence: number
+  }
+  healthStatus?: {
+    overall_health: "excellent" | "good" | "fair" | "poor" | "critical"
+    health_score: number
+    status_indicators: string[]
+  }
+  nutrientAnalysis?: {
+    deficiencies: string[]
+    status: string
+  }
+  colorAnalysisDetails?: {
+    green_coverage: number
+    brown_spots: number
+    yellow_tones: number
+    white_coating: number
+    black_spots: number
+  }
 }
 
 // Plant disease database - common diseases and their characteristics
