@@ -62,6 +62,7 @@ export default function DiseaseDetectionPage() {
 
     try {
       console.log("[v0] Sending image for disease detection analysis")
+      console.log("[v0] Image data length:", selectedImage.length)
       const response = await fetch("/api/detect-disease", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +74,7 @@ export default function DiseaseDetectionPage() {
       }
 
       const { analysis: result } = await response.json()
-      console.log("[v0] Analysis result received:", result.disease)
+      console.log("[v0] Analysis result received:", result.disease, "Confidence:", result.confidence)
       setAnalysis(result)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to analyze image"
@@ -81,6 +82,15 @@ export default function DiseaseDetectionPage() {
       setError(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleReset = () => {
+    setSelectedImage(null)
+    setAnalysis(null)
+    setError(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "" // Clear the file input
     }
   }
 
@@ -160,24 +170,36 @@ export default function DiseaseDetectionPage() {
               </div>
             )}
 
-            <Button
-              onClick={handleAnalyze}
-              disabled={!selectedImage || loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Zap className="h-4 w-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-4 w-4 mr-2" />
-                  Analyze Image
-                </>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAnalyze}
+                disabled={!selectedImage || loading}
+                className="flex-1"
+                size="lg"
+              >
+                {loading ? (
+                  <>
+                    <Zap className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Analyze Image
+                  </>
+                )}
+              </Button>
+              {selectedImage && (
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  size="lg"
+                  disabled={loading}
+                >
+                  Reset
+                </Button>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
 

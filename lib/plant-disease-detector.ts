@@ -159,17 +159,41 @@ export async function analyzePlantImage(imageData: string): Promise<PlantDisease
   }
 }
 
-// Analyze image colors for disease indicators using base64 data analysis
+// Analyze image colors for disease indicators using proper RGB analysis
 function analyzeImageColors(imageData: string): Record<string, any> {
   try {
     // Extract base64 data
     const base64Data = imageData.split(",")[1] || imageData
-
-    // Decode base64 to get raw bytes
     const binaryString = Buffer.from(base64Data, "base64").toString("binary")
-    
-    // Analyze byte patterns to estimate colors
-    // JPG/PNG files have specific byte patterns for different colors
+
+    // Initialize color counters - each pixel has 3-4 bytes (RGB or RGBA)
+    let redSum = 0
+    let greenSum = 0
+    let blueSum = 0
+    let pixelCount = 0
+
+    // Analyze RGB bytes properly
+    // In JPEG/PNG, RGB data comes in sequences of 3 or 4 bytes
+    for (let i = 0; i < binaryString.length - 2; i += 3) {
+      const r = binaryString.charCodeAt(i) || 0
+      const g = binaryString.charCodeAt(i + 1) || 0
+      const b = binaryString.charCodeAt(i + 2) || 0
+
+      // Only count valid RGB values (skip metadata)
+      if (r >= 0 && g >= 0 && b >= 0) {
+        redSum += r
+        greenSum += g
+        blueSum += b
+        pixelCount++
+      }
+    }
+
+    // Calculate averages and analyze color characteristics
+    const avgRed = pixelCount > 0 ? redSum / pixelCount : 128
+    const avgGreen = pixelCount > 0 ? greenSum / pixelCount : 128
+    const avgBlue = pixelCount > 0 ? blueSum / pixelCount : 128
+
+    // Detect color patterns in the image
     let whitePixels = 0
     let brownPixels = 0
     let yellowPixels = 0
@@ -177,62 +201,71 @@ function analyzeImageColors(imageData: string): Record<string, any> {
     let blackPixels = 0
     let greenPixels = 0
     let grayPixels = 0
-    let sampledBytes = 0
 
-    // Sample the binary data (every Nth byte to keep it fast)
-    const sampleRate = Math.max(1, Math.floor(binaryString.length / 1000))
-    
-    for (let i = 0; i < binaryString.length; i += sampleRate) {
-      const byte = binaryString.charCodeAt(i)
-      
-      // Analyze byte values to estimate color distribution
-      // This is a heuristic approach based on JPEG/PNG encoding patterns
-      if (byte > 240) whitePixels++ // High brightness = white
-      else if (byte > 180 && byte < 220) grayPixels++ // Mid-high = gray
-      else if (byte > 100 && byte < 150) {
-        // Mid-range could be various colors
-        if ((i % 3) === 0) brownPixels++ // Sample R channel for brown
-        else if ((i % 3) === 1) greenPixels++ // Sample G channel for green
-        else yellowPixels++ // Sample B channel
+    // Re-scan with color classification
+    for (let i = 0; i < Math.min(binaryString.length - 2, 50000); i += 3) {
+      const r = binaryString.charCodeAt(i) || 0
+      const g = binaryString.charCodeAt(i + 1) || 0
+      const b = binaryString.charCodeAt(i + 2) || 0
+
+      const brightness = (r + g + b) / 3
+      const maxRGB = Math.max(r, g, b)
+      const minRGB = Math.min(r, g, b)
+      const saturation = maxRGB === 0 ? 0 : (maxRGB - minRGB) / maxRGB
+
+      // White or very light gray (powdery mildew)
+      if (r > 200 && g > 200 && b > 200) {
+        whitePixels++
       }
-      else if (byte > 150) {
-        rustPixels++ // Warm colors
+      // Gray (fungal coating)
+      else if (Math.abs(r - g) < 20 && Math.abs(g - b) < 20 && brightness > 120 && brightness < 200) {
+        grayPixels++
       }
-      else if (byte < 50) blackPixels++ // Low brightness = black
-      
-      sampledBytes++
+      // Brown (early blight, leaf spots)
+      else if (r > g && r > b && r > 100 && g < 160 && b < 140) {
+        brownPixels++
+      }
+      // Yellow (nutrient deficiency, disease)
+      else if (r > 150 && g > 120 && b < 100 && saturation > 0.3) {
+        yellowPixels++
+      }
+      // Orange/rust color (leaf rust)
+      else if (r > 180 && g < 150 && b < 100 && saturation > 0.4) {
+        rustPixels++
+      }
+      // Black spots (anthracnose)
+      else if (r < 80 && g < 80 && b < 80) {
+        blackPixels++
+      }
+      // Green (healthy plant)
+      else if (g > r && g > b && g > 100) {
+        greenPixels++
+      }
     }
 
-    // Ensure we have data
-    const totalSamples = Math.max(1, sampledBytes)
-    
-    const whitePercent = whitePixels / totalSamples
-    const brownPercent = brownPixels / totalSamples
-    const yellowPercent = yellowPixels / totalSamples
-    const rustPercent = rustPixels / totalSamples
-    const blackPercent = blackPixels / totalSamples
-    const greenPercent = greenPixels / totalSamples
-    const grayPercent = grayPixels / totalSamples
+    const sampleSize = Math.min(pixelCount, 16668) // 50000 bytes / 3
+    const whitePercent = sampleSize > 0 ? whitePixels / sampleSize : 0
+    const brownPercent = sampleSize > 0 ? brownPixels / sampleSize : 0
+    const yellowPercent = sampleSize > 0 ? yellowPixels / sampleSize : 0
+    const rustPercent = sampleSize > 0 ? rustPixels / sampleSize : 0
+    const blackPercent = sampleSize > 0 ? blackPixels / sampleSize : 0
+    const greenPercent = sampleSize > 0 ? greenPixels / sampleSize : 0
+    const grayPercent = sampleSize > 0 ? grayPixels / sampleSize : 0
 
-    // Analyze file size for additional clues
-    const fileSize = base64Data.length
-    const fileSizeIndicator = Math.min(fileSize / 100000, 1) // Normalize to 0-1
+    console.log("[v0] RGB Analysis - Avg R:", Math.round(avgRed), "G:", Math.round(avgGreen), "B:", Math.round(avgBlue))
+    console.log("[v0] Color distribution - White:", (whitePercent * 100).toFixed(2), "% Brown:", (brownPercent * 100).toFixed(2), "% Yellow:", (yellowPercent * 100).toFixed(2), "% Rust:", (rustPercent * 100).toFixed(2), "% Black:", (blackPercent * 100).toFixed(2), "% Green:", (greenPercent * 100).toFixed(2), "%")
 
-    console.log("[v0] Image size:", fileSize, "bytes")
-    console.log("[v0] Color distribution - White:", (whitePercent * 100).toFixed(1), "% Brown:", (brownPercent * 100).toFixed(1), "% Yellow:", (yellowPercent * 100).toFixed(1), "% Green:", (greenPercent * 100).toFixed(1), "%")
-
-    // Generate analysis based on color distribution
     const analysis = {
-      hasWhiteCoating: whitePercent > 0.12 || grayPercent > 0.20,
-      hasBrownSpots: brownPercent > 0.12,
-      hasYellow: yellowPercent > 0.15,
-      hasRustColor: rustPercent > 0.12,
-      hasBlackSpots: blackPercent > 0.08,
-      severeYellowing: yellowPercent > 0.25,
-      brownDiscoloration: brownPercent > 0.18,
-      massWilting: (brownPercent + blackPercent) > 0.25 && greenPercent < 0.15,
+      hasWhiteCoating: whitePercent > 0.08 || grayPercent > 0.10,
+      hasBrownSpots: brownPercent > 0.05,
+      hasYellow: yellowPercent > 0.06,
+      hasRustColor: rustPercent > 0.05,
+      hasBlackSpots: blackPercent > 0.03,
+      severeYellowing: yellowPercent > 0.15,
+      brownDiscoloration: brownPercent > 0.12,
+      massWilting: (brownPercent + blackPercent) > 0.15 && greenPercent < 0.20,
       confidence: Math.min(
-        (whitePercent + brownPercent + yellowPercent + rustPercent + blackPercent) * 0.8 + 0.15,
+        (whitePercent + brownPercent + yellowPercent + rustPercent + blackPercent + grayPercent) * 1.2,
         0.95
       )
     }
