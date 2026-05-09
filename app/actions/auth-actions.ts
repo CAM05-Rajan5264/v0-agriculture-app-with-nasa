@@ -17,7 +17,7 @@ export async function loginUser(email: string, password: string) {
     })
 
     if (error) {
-      const errorMessage = error?.message || "Login failed"
+      const errorMessage = String(error?.message || "Login failed")
       console.error("[v0] Login error:", errorMessage)
       return { success: false, message: errorMessage }
     }
@@ -54,7 +54,7 @@ export async function requestPasswordReset(email: string) {
     })
 
     if (error) {
-      const errorMessage = error?.message || "Failed to send password reset email"
+      const errorMessage = String(error?.message || "Failed to send password reset email")
       console.error("[v0] Password reset error:", errorMessage)
       return { success: false, message: errorMessage }
     }
@@ -86,7 +86,7 @@ export async function resetPassword(token: string, newPassword: string) {
     })
 
     if (error) {
-      const errorMessage = error?.message || "Failed to reset password"
+      const errorMessage = String(error?.message || "Failed to reset password")
       console.error("[v0] Password update error:", errorMessage)
       return { success: false, message: errorMessage }
     }
