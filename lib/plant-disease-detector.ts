@@ -134,6 +134,15 @@ export async function analyzePlantImage(imageData: string): Promise<PlantDisease
       confidence = 0.50
     }
 
+    // Identify probable crops based on color patterns
+    const cropIdentification = identifyCrop(colorAnalysis)
+    
+    // Calculate overall health status
+    const healthStatus = calculateHealthStatus(colorAnalysis)
+    
+    // Analyze for nutrient deficiencies
+    const nutrientAnalysis = analyzeNutrients(colorAnalysis)
+
     // If no disease detected, return healthy assessment
     if (!detectedDisease) {
       console.log("[v0] No significant disease indicators detected")
@@ -150,7 +159,17 @@ export async function analyzePlantImage(imageData: string): Promise<PlantDisease
           "Ensure adequate sunlight and air circulation",
           "Remove any dead leaves to prevent fungal issues"
         ],
-        isDisease: false
+        isDisease: false,
+        cropIdentification,
+        healthStatus,
+        nutrientAnalysis,
+        colorAnalysisDetails: {
+          green_coverage: (colorAnalysis.greenPercent || 0) * 100,
+          brown_spots: (colorAnalysis.brownPercent || 0) * 100,
+          yellow_tones: (colorAnalysis.yellowPercent || 0) * 100,
+          white_coating: (colorAnalysis.whitePercent || 0) * 100,
+          black_spots: (colorAnalysis.blackPercent || 0) * 100
+        }
       }
     }
 
@@ -171,7 +190,16 @@ export async function analyzePlantImage(imageData: string): Promise<PlantDisease
       urgency: mapSeverityToUrgency(diseaseInfo.severity),
       recommendations: generateRecommendations(diseaseInfo),
       isDisease: true,
-      cropType: "Mixed crops"
+      cropIdentification,
+      healthStatus,
+      nutrientAnalysis,
+      colorAnalysisDetails: {
+        green_coverage: (colorAnalysis.greenPercent || 0) * 100,
+        brown_spots: (colorAnalysis.brownPercent || 0) * 100,
+        yellow_tones: (colorAnalysis.yellowPercent || 0) * 100,
+        white_coating: (colorAnalysis.whitePercent || 0) * 100,
+        black_spots: (colorAnalysis.blackPercent || 0) * 100
+      }
     }
   } catch (error) {
     console.error("[v0] Plant disease analysis error:", error)
@@ -352,6 +380,129 @@ function getFallbackAnalysis(): PlantDiseaseAnalysis {
       "Try uploading again"
     ],
     isDisease: false
+  }
+}
+
+// Identify probable crops based on color characteristics
+function identifyCrop(colorAnalysis: any) {
+  const probableCrops: string[] = []
+  let confidence = 0.5
+
+  // Crop identification heuristics based on color patterns
+  if (colorAnalysis.greenPercent > 0.35) {
+    probableCrops.push("Leafy Greens", "Lettuce", "Spinach")
+    confidence = 0.65
+  }
+  
+  if (colorAnalysis.yellowPercent > 0.12 && colorAnalysis.greenPercent > 0.25) {
+    probableCrops.push("Tomato", "Pepper", "Corn")
+    confidence = Math.max(confidence, 0.60)
+  }
+  
+  if (colorAnalysis.brownPercent > 0.15 && colorAnalysis.greenPercent > 0.20) {
+    probableCrops.push("Potato", "Bean", "Peas")
+    confidence = Math.max(confidence, 0.55)
+  }
+  
+  if (colorAnalysis.whitePercent > 0.08) {
+    probableCrops.push("Wheat", "Rice", "Barley")
+    confidence = Math.max(confidence, 0.50)
+  }
+
+  if (probableCrops.length === 0) {
+    probableCrops.push("Unknown Crop")
+    confidence = 0.3
+  }
+
+  return {
+    probable_crops: [...new Set(probableCrops)],
+    confidence: Math.min(confidence, 0.95)
+  }
+}
+
+// Calculate overall health status
+function calculateHealthStatus(colorAnalysis: any) {
+  const greenCoverage = colorAnalysis.greenPercent || 0
+  const diseasedArea = (colorAnalysis.brownPercent || 0) + (colorAnalysis.blackPercent || 0)
+  const yellowArea = colorAnalysis.yellowPercent || 0
+  
+  let healthScore = 100
+  let overallHealth: "excellent" | "good" | "fair" | "poor" | "critical"
+
+  // Deduct points based on disease indicators
+  healthScore -= diseasedArea * 150 // High impact from brown/black spots
+  healthScore -= yellowArea * 80 // Medium impact from yellowing
+  healthScore -= (colorAnalysis.whitePercent || 0) * 100 // White coating impact
+
+  // Bonus for green coverage
+  healthScore += greenCoverage * 50
+
+  // Ensure score is within 0-100
+  healthScore = Math.max(0, Math.min(100, healthScore))
+
+  if (healthScore >= 80) overallHealth = "excellent"
+  else if (healthScore >= 60) overallHealth = "good"
+  else if (healthScore >= 40) overallHealth = "fair"
+  else if (healthScore >= 20) overallHealth = "poor"
+  else overallHealth = "critical"
+
+  const statusIndicators: string[] = []
+  if (greenCoverage > 0.40) statusIndicators.push("Good foliar coverage")
+  if (diseasedArea > 0.15) statusIndicators.push("Significant disease presence")
+  if (yellowArea > 0.10) statusIndicators.push("Signs of nutrient stress or disease")
+  if (colorAnalysis.whitePercent > 0.08) statusIndicators.push("Possible fungal infection")
+  if (healthScore >= 80) statusIndicators.push("Plant appears vigorous")
+  if (statusIndicators.length === 0) statusIndicators.push("Consistent coloration")
+
+  return {
+    overall_health: overallHealth,
+    health_score: Math.round(healthScore),
+    status_indicators: statusIndicators
+  }
+}
+
+// Analyze for nutrient deficiencies
+function analyzeNutrients(colorAnalysis: any) {
+  const deficiencies: string[] = []
+  let status = "Nutrients appear adequate"
+
+  // Nitrogen deficiency - yellowing of older leaves
+  if (colorAnalysis.yellowPercent > 0.12 && colorAnalysis.greenPercent < 0.35) {
+    deficiencies.push("Nitrogen deficiency (overall yellowing)")
+    status = "Nutrient deficiencies detected"
+  }
+
+  // Iron deficiency - yellowing with green veins
+  if (colorAnalysis.yellowPercent > 0.15 && colorAnalysis.greenPercent > 0.25) {
+    deficiencies.push("Possible iron deficiency")
+    status = "Possible nutrient imbalance"
+  }
+
+  // Potassium deficiency - brown edges/spots
+  if (colorAnalysis.brownPercent > 0.12 && colorAnalysis.yellowPercent > 0.08) {
+    deficiencies.push("Potassium deficiency (leaf burn/brown edges)")
+    status = "Nutrient deficiencies detected"
+  }
+
+  // Magnesium deficiency - interveinal chlorosis
+  if (colorAnalysis.yellowPercent > 0.10 && colorAnalysis.whitePercent < 0.05) {
+    deficiencies.push("Possible magnesium deficiency")
+    status = "Possible nutrient imbalance"
+  }
+
+  // Calcium deficiency - blossom end rot (dark spots)
+  if (colorAnalysis.blackPercent > 0.08) {
+    deficiencies.push("Possible calcium deficiency")
+    status = "Check calcium levels"
+  }
+
+  if (deficiencies.length === 0) {
+    deficiencies.push("No obvious nutrient deficiencies")
+  }
+
+  return {
+    deficiencies,
+    status
   }
 }
 
