@@ -17,9 +17,7 @@ import {
   Droplets,
   TrendingUp,
   Code,
-  Satellite,
   Activity,
-  AlertCircle,
 } from "lucide-react"
 
 const navigation = [
@@ -29,8 +27,6 @@ const navigation = [
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
-  { name: "Satellite", href: "/dashboard/satellite", icon: Satellite },
-  { name: "Disease Detection", href: "/dashboard/disease-detection", icon: AlertCircle },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
