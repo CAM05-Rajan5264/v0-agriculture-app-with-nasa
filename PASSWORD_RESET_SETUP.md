@@ -32,17 +32,17 @@ The farm management system now includes a complete password reset flow with thre
 ## Technical Details
 
 ### Routes
-```
+\`\`\`
 /auth/login                    - Main login page (with forgot link)
 /auth/forgot-password          - Request password reset email
 /auth/reset-password           - Set new password (with session token)
-```
+\`\`\`
 
 ### Supabase Integration
 
 The feature uses Supabase Auth native functions:
 
-```typescript
+\`\`\`typescript
 // Send reset email
 supabase.auth.resetPasswordForEmail(email, {
   redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -50,7 +50,7 @@ supabase.auth.resetPasswordForEmail(email, {
 
 // Update password
 supabase.auth.updateUser({ password })
-```
+\`\`\`
 
 ### Security Features
 
@@ -65,7 +65,7 @@ supabase.auth.updateUser({ password })
 
 ### Password Reset Flow
 
-```
+\`\`\`
 User clicks "Forgot?" on Login
     ↓
 Enters email on Forgot Password page
@@ -81,7 +81,7 @@ Enters new password with strength indicator
 Password updated successfully
     ↓
 Redirected to Login page (2 second delay)
-```
+\`\`\`
 
 ## Password Strength Levels
 
@@ -105,11 +105,11 @@ Redirected to Login page (2 second delay)
 
 ## Environment Variables Required
 
-```bash
+\`\`\`bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
+\`\`\`
 
 ## Testing the Feature
 
