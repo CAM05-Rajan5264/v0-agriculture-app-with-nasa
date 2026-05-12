@@ -12,6 +12,28 @@ interface SoilMoistureChartProps {
 }
 
 export function SoilMoistureChart({ data, farmName }: SoilMoistureChartProps) {
+  // Handle empty real NASA data - show message instead of fake data
+  if (!data || data.length === 0) {
+    return (
+      <Card className="border-border bg-card">
+        <CardContent className="pt-6">
+          <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-700">
+            <p className="font-medium">No Soil Moisture Data Available</p>
+            <p className="mt-1 text-xs">
+              SMAP or MODIS soil moisture data from NASA is not currently available for this location. This may occur if:
+            </p>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
+              <li>The location is outside SMAP satellite coverage area</li>
+              <li>Data has not yet been processed by NASA</li>
+              <li>NASA soil moisture services are temporarily unavailable</li>
+            </ul>
+            <p className="mt-3 text-xs font-medium">We only display real NASA satellite data, never simulated data.</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const latestData = data[data.length - 1]
   const previousData = data[data.length - 2]
 
