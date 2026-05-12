@@ -9,6 +9,7 @@ import { AlertCircle, TrendingUp, Droplets, Leaf, AlertTriangle, CheckCircle } f
 import type { CropMonitoringData } from "@/lib/nasa-earth-observation"
 import { generateCropMonitoringData } from "@/lib/nasa-earth-observation"
 import { getWeatherData } from "@/lib/nasa-api"
+import { SatelliteImageryViewer } from "@/components/crop-monitoring/satellite-imagery-viewer"
 
 interface CropField {
   id: string
@@ -139,6 +140,7 @@ export default function CropMonitoringPage() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="satellite">Satellite Imagery</TabsTrigger>
             <TabsTrigger value="metrics">Detailed Metrics</TabsTrigger>
             <TabsTrigger value="growth">Growth Stage</TabsTrigger>
             <TabsTrigger value="alerts">Alerts & Actions</TabsTrigger>
@@ -208,6 +210,18 @@ export default function CropMonitoringPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Satellite Imagery Tab */}
+          <TabsContent value="satellite" className="space-y-4">
+            {field && (
+              <SatelliteImageryViewer
+                latitude={field.latitude}
+                longitude={field.longitude}
+                fieldName={field.name}
+                cropName={field.crop}
+              />
+            )}
           </TabsContent>
 
           {/* Detailed Metrics Tab */}
