@@ -17,13 +17,7 @@ export async function loginUser(email: string, password: string) {
     })
 
     if (error) {
-      // Safely extract error message
-      let errorMessage = "Login failed"
-      if (error && typeof error === "object") {
-        if ("message" in error && typeof error.message === "string") {
-          errorMessage = error.message
-        }
-      }
+      const errorMessage = error?.message || "Login failed"
       console.error("[v0] Login error:", errorMessage)
       return { success: false, message: errorMessage }
     }
@@ -60,13 +54,7 @@ export async function requestPasswordReset(email: string) {
     })
 
     if (error) {
-      // Safely extract error message
-      let errorMessage = "Failed to send password reset email"
-      if (error && typeof error === "object") {
-        if ("message" in error && typeof error.message === "string") {
-          errorMessage = error.message
-        }
-      }
+      const errorMessage = error?.message || "Failed to send password reset email"
       console.error("[v0] Password reset error:", errorMessage)
       return { success: false, message: errorMessage }
     }
@@ -98,13 +86,7 @@ export async function resetPassword(token: string, newPassword: string) {
     })
 
     if (error) {
-      // Safely extract error message
-      let errorMessage = "Failed to reset password"
-      if (error && typeof error === "object") {
-        if ("message" in error && typeof error.message === "string") {
-          errorMessage = error.message
-        }
-      }
+      const errorMessage = error?.message || "Failed to reset password"
       console.error("[v0] Password update error:", errorMessage)
       return { success: false, message: errorMessage }
     }

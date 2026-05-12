@@ -6,18 +6,15 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
-  // Check if environment variables are set
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn("[v0] Supabase env vars not available in middleware - skipping auth check")
-    // Return response without auth check if env vars are not set
-    // This is normal in development environments
-    return supabaseResponse
-  }
-
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // Skip auth if env vars are missing
+    if (!supabaseUrl || !supabaseKey) {
+      return supabaseResponse
+    }
+
     const supabase = createServerClient(
       supabaseUrl,
       supabaseKey,
@@ -48,10 +45,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
   } catch (error) {
-    // Log error details but continue
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.warn("[v0] Supabase middleware error:", errorMessage)
-    // Continue without auth protection if Supabase fails
+    console.error("[v0] Middleware error:", error instanceof Error ? error.message : "Unknown error")
   }
 
   return supabaseResponse

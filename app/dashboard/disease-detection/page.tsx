@@ -252,11 +252,9 @@ export default function DiseaseDetectionPage() {
 
           <CardContent className="space-y-6">
             <Tabs defaultValue="disease" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="disease">Disease</TabsTrigger>
-                <TabsTrigger value="crop">Crop</TabsTrigger>
-                <TabsTrigger value="health">Health</TabsTrigger>
-                <TabsTrigger value="nutrients">Nutrients</TabsTrigger>
+                <TabsTrigger value="treatment">Treatment</TabsTrigger>
                 <TabsTrigger value="recommendations">Actions</TabsTrigger>
               </TabsList>
 
@@ -287,130 +285,6 @@ export default function DiseaseDetectionPage() {
                 <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${urgencyColors[analysis.urgency]}`}>
                   Urgency: {analysis.urgency.charAt(0).toUpperCase() + analysis.urgency.slice(1)}
                 </div>
-              </TabsContent>
-
-              {/* Crop Tab */}
-              <TabsContent value="crop" className="space-y-4">
-                {analysis.cropIdentification ? (
-                  <>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                      <p className="font-medium text-foreground">Probable Crop Types:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {analysis.cropIdentification.probable_crops.map((crop, idx) => (
-                          <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {crop}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-blue-700">
-                        Identification Confidence: {Math.round(analysis.cropIdentification.confidence * 100)}%
-                      </p>
-                    </div>
-                    {analysis.colorAnalysisDetails && (
-                      <div className="space-y-3 text-sm">
-                        <p className="font-medium text-foreground">Color Analysis Details:</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-green-50 p-3 rounded">
-                            <p className="text-xs text-muted-foreground">Green Coverage</p>
-                            <p className="text-lg font-bold text-green-700">{analysis.colorAnalysisDetails.green_coverage.toFixed(1)}%</p>
-                          </div>
-                          <div className="bg-yellow-50 p-3 rounded">
-                            <p className="text-xs text-muted-foreground">Yellow Tones</p>
-                            <p className="text-lg font-bold text-yellow-700">{analysis.colorAnalysisDetails.yellow_tones.toFixed(1)}%</p>
-                          </div>
-                          <div className="bg-amber-50 p-3 rounded">
-                            <p className="text-xs text-muted-foreground">Brown Spots</p>
-                            <p className="text-lg font-bold text-amber-700">{analysis.colorAnalysisDetails.brown_spots.toFixed(1)}%</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded">
-                            <p className="text-xs text-muted-foreground">White Coating</p>
-                            <p className="text-lg font-bold text-gray-700">{analysis.colorAnalysisDetails.white_coating.toFixed(1)}%</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Crop identification data not available</p>
-                )}
-              </TabsContent>
-
-              {/* Health Status Tab */}
-              <TabsContent value="health" className="space-y-4">
-                {analysis.healthStatus ? (
-                  <>
-                    <div className="space-y-3">
-                      <div className={`p-4 rounded-lg ${
-                        analysis.healthStatus.overall_health === 'excellent' ? 'bg-green-50 border border-green-200' :
-                        analysis.healthStatus.overall_health === 'good' ? 'bg-blue-50 border border-blue-200' :
-                        analysis.healthStatus.overall_health === 'fair' ? 'bg-yellow-50 border border-yellow-200' :
-                        analysis.healthStatus.overall_health === 'poor' ? 'bg-orange-50 border border-orange-200' :
-                        'bg-red-50 border border-red-200'
-                      }`}>
-                        <p className="text-xs font-medium mb-1">OVERALL HEALTH STATUS</p>
-                        <p className="text-2xl font-bold capitalize">{analysis.healthStatus.overall_health}</p>
-                        <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              analysis.healthStatus.health_score >= 80 ? 'bg-green-600' :
-                              analysis.healthStatus.health_score >= 60 ? 'bg-blue-600' :
-                              analysis.healthStatus.health_score >= 40 ? 'bg-yellow-600' :
-                              analysis.healthStatus.health_score >= 20 ? 'bg-orange-600' :
-                              'bg-red-600'
-                            }`}
-                            style={{ width: `${analysis.healthStatus.health_score}%` }}
-                          />
-                        </div>
-                        <p className="text-sm font-medium mt-2">Health Score: {analysis.healthStatus.health_score}/100</p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <p className="font-medium text-foreground">Health Indicators:</p>
-                        <ul className="space-y-1">
-                          {analysis.healthStatus.status_indicators.map((indicator, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="text-primary mt-1">•</span>
-                              {indicator}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Health status data not available</p>
-                )}
-              </TabsContent>
-
-              {/* Nutrient Tab */}
-              <TabsContent value="nutrients" className="space-y-4">
-                {analysis.nutrientAnalysis ? (
-                  <>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
-                      <p className="font-medium text-foreground">Nutrient Analysis:</p>
-                      <p className="text-sm font-medium text-purple-900">{analysis.nutrientAnalysis.status}</p>
-                      
-                      {analysis.nutrientAnalysis.deficiencies.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground">Detected Issues:</p>
-                          <ul className="space-y-1">
-                            {analysis.nutrientAnalysis.deficiencies.map((deficiency, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm">
-                                <span className={`text-base mt-0.5 ${
-                                  deficiency === "No obvious nutrient deficiencies" ? '✓' : '⚠'
-                                } ${deficiency === "No obvious nutrient deficiencies" ? 'text-green-600' : 'text-orange-600'}`}>
-                                </span>
-                                <span className="text-muted-foreground">{deficiency}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Nutrient analysis data not available</p>
-                )}
               </TabsContent>
 
               {/* Treatment Tab */}
