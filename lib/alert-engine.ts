@@ -1,6 +1,5 @@
 import type { Farm, Crop, Alert } from "./types"
 import { getWeatherData, calculateNDVI, analyzeCropHealth, getIrrigationStatus, getWeatherForecast } from "./nasa-api"
-import { getNaturalEvents } from "./nasa-satellite-api"
 import { CROP_GUIDES } from "./crop-guide"
 
 export interface AlertTrigger {
@@ -261,21 +260,6 @@ export async function checkForAlerts(
 
     const activityAlerts = checkCropActivityAlerts(crop)
     alerts.push(...activityAlerts)
-  }
-
-  // Check for natural disaster events nearby
-  const naturalEvents = await getNaturalEvents(farms, 500)
-  for (const event of naturalEvents) {
-    // Only alert for high severity events
-    if (event.severity === "critical" || event.severity === "high") {
-      alerts.push({
-        type: "weather",
-        severity: event.severity === "critical" ? "critical" : "warning",
-        title: `${event.category === "wildfires" ? "Wildfire" : event.category === "floods" ? "Flood" : event.category === "storms" ? "Storm" : "Natural Event"} Alert`,
-        message: `${event.title} detected ${event.distanceKm}km from your farm. ${event.description}. Monitor conditions and take precautions if needed.`,
-        farmId: farms[0]?.id,
-      })
-    }
   }
 
   return alerts
