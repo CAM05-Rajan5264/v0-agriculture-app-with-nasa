@@ -116,12 +116,15 @@ export default function CropMonitoringPage() {
       </div>
 
       {error && (
-        <Card className="border-destructive bg-destructive/5">
+        <Card className="border-amber-500/50 bg-amber-500/10">
           <CardContent className="flex gap-3 pt-6">
-            <AlertCircle className="h-5 w-5 text-destructive" />
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             <div>
-              <p className="font-medium text-destructive">Error loading monitoring data</p>
-              <p className="text-sm text-muted-foreground">{error}</p>
+              <p className="font-medium text-amber-700 dark:text-amber-400">NASA Data Unavailable</p>
+              <p className="text-sm text-amber-600 dark:text-amber-300">{error}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-300 mt-2">
+                We only display real NASA Earth observation data. No simulated data is shown.
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -145,19 +145,18 @@ export async function getWeatherData(latitude: number, longitude: number): Promi
     }
   }
 
-  console.log("[v0] NASA API returned no valid data, using fallback")
+  console.error("[v0] NASA POWER API failed to return valid data - no simulated data available")
 
-  const latVariation = Math.sin(latitude * 0.1) * 5
-  const lngVariation = Math.cos(longitude * 0.1) * 3
-
+  // Return null values instead of simulated data to ensure 100% data accuracy
+  // Users should be notified that real NASA data is unavailable
   return {
-    temperature: 22 + latVariation + lngVariation,
-    humidity: 55 + Math.abs(latVariation) * 2,
-    precipitation: Math.max(0, lngVariation + 2),
-    windSpeed: 4 + Math.abs(latVariation) * 0.5,
-    solarRadiation: 200 + latVariation * 10,
-    evapotranspiration: 4 + latVariation * 0.2,
-  }
+    temperature: null,
+    humidity: null,
+    precipitation: null,
+    windSpeed: null,
+    solarRadiation: null,
+    evapotranspiration: null,
+  } as any
 }
 
 export async function getWeatherHistory(
@@ -230,37 +229,11 @@ export async function getWeatherHistory(
     }
   }
 
-  console.log("[v0] Using fallback weather history data")
+  console.error("[v0] NASA POWER API failed - no simulated weather history available")
 
-  // Fallback with realistic variation
-  const result = []
-  for (let i = days; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    const dayVariation = Math.sin(i * 0.5) * 5
-    const precip = Math.max(0, 2 + Math.sin(i * 0.3) * 4)
-    const cloud = 40 + Math.sin(i * 0.4) * 30
-
-    let condition: "sunny" | "partly-cloudy" | "cloudy" | "rainy" = "sunny"
-    if (precip > 1) condition = "rainy"
-    else if (cloud > 70) condition = "cloudy"
-    else if (cloud > 30) condition = "partly-cloudy"
-
-    const temp = 18 + dayVariation + Math.sin(latitude * 0.1) * 3
-    result.push({
-      date: date.toISOString().split("T")[0],
-      temperature: temp,
-      tempMin: temp - 4 - Math.random() * 2,
-      tempMax: temp + 4 + Math.random() * 2,
-      precipitation: precip,
-      humidity: 60 + Math.sin(i * 0.4) * 15,
-      windSpeed: 3 + Math.abs(Math.sin(i * 0.3)) * 4,
-      cloudCover: cloud,
-      solarRadiation: 200 + Math.cos(i * 0.2) * 100,
-      condition,
-    })
-  }
-  return result
+  // Return empty array instead of simulated data
+  // Users will be notified that real NASA historical data is unavailable
+  return []
 }
 
 export async function getWeatherForecast(
@@ -281,66 +254,13 @@ export async function getWeatherForecast(
     precipProbability: number
   }[]
 > {
-  // NASA POWER doesn't provide forecast data, so we use climatological patterns
-  // based on recent historical data to generate realistic forecast
-  const history = await getWeatherHistory(latitude, longitude, 30)
+  // NOTE: NASA POWER only provides historical data, not forecasts
+  // Weather forecasts would require external weather service integration (e.g., NOAA)
+  // Returning empty array ensures 100% NASA-sourced data accuracy
+  
+  console.warn("[v0] Weather forecast requires NOAA integration - not available from NASA POWER API alone")
 
-  // Calculate averages and trends from historical data
-  const recentDays = history.slice(-7)
-  const avgTemp = recentDays.reduce((sum, d) => sum + d.temperature, 0) / recentDays.length
-  const avgHumidity = recentDays.reduce((sum, d) => sum + d.humidity, 0) / recentDays.length
-  const avgWind = recentDays.reduce((sum, d) => sum + d.windSpeed, 0) / recentDays.length
-  const avgCloud = recentDays.reduce((sum, d) => sum + d.cloudCover, 0) / recentDays.length
-  const avgPrecip = recentDays.reduce((sum, d) => sum + d.precipitation, 0) / recentDays.length
-
-  // Calculate trend (is it getting warmer/cooler?)
-  const firstHalf = history.slice(0, 15)
-  const secondHalf = history.slice(-15)
-  const tempTrend =
-    secondHalf.reduce((s, d) => s + d.temperature, 0) / secondHalf.length -
-    firstHalf.reduce((s, d) => s + d.temperature, 0) / firstHalf.length
-
-  const forecast = []
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-
-    // Add some variation while following the trend
-    const variation = Math.sin(i * 0.8) * 3
-    const trendAdjust = (tempTrend / 7) * i
-    const temp = avgTemp + variation + trendAdjust
-    const tempMin = temp - 3 - Math.random() * 2
-    const tempMax = temp + 3 + Math.random() * 2
-
-    // Cloud and precipitation with some randomness
-    const cloudVariation = Math.sin(i * 1.2) * 25
-    const cloud = Math.max(0, Math.min(100, avgCloud + cloudVariation + (Math.random() - 0.5) * 20))
-    const precipProb = Math.min(100, Math.max(0, (cloud - 40) * 1.5 + Math.random() * 20))
-    const precip = precipProb > 50 ? avgPrecip * (0.5 + Math.random()) : 0
-
-    let condition: "sunny" | "partly-cloudy" | "cloudy" | "rainy" = "sunny"
-    if (precip > 1 || precipProb > 70) condition = "rainy"
-    else if (cloud > 70) condition = "cloudy"
-    else if (cloud > 30) condition = "partly-cloudy"
-
-    forecast.push({
-      date: date.toISOString().split("T")[0],
-      dayName: dayNames[date.getDay()],
-      temperature: Math.round(temp * 10) / 10,
-      tempMin: Math.round(tempMin * 10) / 10,
-      tempMax: Math.round(tempMax * 10) / 10,
-      precipitation: Math.round(precip * 10) / 10,
-      humidity: Math.round(Math.max(30, Math.min(95, avgHumidity + (Math.random() - 0.5) * 15))),
-      windSpeed: Math.round(Math.max(0, avgWind + (Math.random() - 0.5) * 3) * 10) / 10,
-      cloudCover: Math.round(cloud),
-      condition,
-      precipProbability: Math.round(precipProb),
-    })
-  }
-
-  return forecast
+  return []
 }
 
 function calculateET(temp: number, humidity: number, windSpeed: number, solarRadiation: number): number {
@@ -355,32 +275,14 @@ function calculateET(temp: number, humidity: number, windSpeed: number, solarRad
   return Math.max(0, ET)
 }
 
-export function calculateNDVI(latitude: number, longitude: number, plantingDate: string): number {
-  // Simulated NDVI based on growing season progress
-  const planted = new Date(plantingDate)
-  const now = new Date()
-  const daysSincePlanting = Math.floor((now.getTime() - planted.getTime()) / (1000 * 60 * 60 * 24))
-
-  // Add location-based variation factor
-  const locationFactor = Math.sin(latitude * 0.1) * 0.05
-
-  // NDVI typically follows a growth curve
-  let baseNDVI = 0.1
-
-  if (daysSincePlanting < 0) {
-    baseNDVI = 0.1
-  } else if (daysSincePlanting < 20) {
-    baseNDVI = 0.15 + daysSincePlanting * 0.015
-  } else if (daysSincePlanting < 60) {
-    baseNDVI = 0.45 + (daysSincePlanting - 20) * 0.01
-  } else if (daysSincePlanting < 100) {
-    baseNDVI = 0.85 - (daysSincePlanting - 60) * 0.002
-  } else {
-    baseNDVI = 0.77 - (daysSincePlanting - 100) * 0.003
-  }
-
-  // Apply location factor and constraints
-  return Math.min(0.95, Math.max(0.1, baseNDVI + locationFactor))
+export async function calculateNDVI(latitude: number, longitude: number, plantingDate: string): Promise<number | null> {
+  // NDVI should come from NASA satellite data (MODIS, Landsat)
+  // For now, return null to indicate real satellite data unavailable
+  // In production, integrate with MODIS or Landsat Level 2 products
+  
+  console.warn("[v0] NDVI requires NASA MODIS or Landsat satellite data - not available from weather API alone")
+  
+  return null
 }
 
 export function analyzeCropHealth(ndvi: number): CropHealthAnalysis {
