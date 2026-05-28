@@ -29,7 +29,8 @@ export function CropHealthCard({ analysis, cropName }: CropHealthCardProps) {
     }
   }
 
-  const getProgressColor = (ndvi: number) => {
+  const getProgressColor = (ndvi: number | null) => {
+    if (!ndvi) return "bg-gray-400"
     if (ndvi >= 0.7) return "bg-green-500"
     if (ndvi >= 0.5) return "bg-emerald-500"
     if (ndvi >= 0.3) return "bg-amber-500"
@@ -53,11 +54,16 @@ export function CropHealthCard({ analysis, cropName }: CropHealthCardProps) {
           <div>
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">NDVI Index</span>
-              <span className="font-medium text-foreground">{analysis.ndvi.toFixed(2)}</span>
+              <span className="font-medium text-foreground">
+                {analysis.ndvi !== null && analysis.ndvi !== undefined ? analysis.ndvi.toFixed(2) : "N/A"}
+              </span>
             </div>
-            <Progress value={analysis.ndvi * 100} className={`h-2 ${getProgressColor(analysis.ndvi)}`} />
+            <Progress 
+              value={analysis.ndvi ? analysis.ndvi * 100 : 0} 
+              className={`h-2 ${getProgressColor(analysis.ndvi)}`} 
+            />
             <p className="mt-2 text-xs text-amber-600">
-              Note: NDVI values are estimated based on growth stage. For actual satellite imagery, consider using dedicated NDVI services.
+              Note: NDVI data requires NASA satellite integration. For actual satellite imagery, visit the Crop Monitoring section.
             </p>
           </div>
 

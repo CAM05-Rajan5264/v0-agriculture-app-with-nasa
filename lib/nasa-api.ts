@@ -285,11 +285,16 @@ export async function calculateNDVI(latitude: number, longitude: number, plantin
   return null
 }
 
-export function analyzeCropHealth(ndvi: number): CropHealthAnalysis {
+export function analyzeCropHealth(ndvi: number | null): CropHealthAnalysis {
   let healthStatus: CropHealthAnalysis["healthStatus"]
   const recommendations: string[] = []
 
-  if (ndvi >= 0.7) {
+  if (ndvi === null || ndvi === undefined) {
+    healthStatus = "moderate"
+    recommendations.push("Real NASA satellite NDVI data unavailable")
+    recommendations.push("View Crop Monitoring section for satellite imagery analysis")
+    recommendations.push("Use irrigation scheduling based on weather and soil moisture")
+  } else if (ndvi >= 0.7) {
     healthStatus = "excellent"
     recommendations.push("Crops are thriving - maintain current practices")
     recommendations.push("Monitor for pest pressure as healthy crops attract insects")

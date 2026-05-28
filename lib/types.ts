@@ -64,7 +64,7 @@ export interface NASAPowerResponse {
 }
 
 export interface CropHealthAnalysis {
-  ndvi: number
+  ndvi: number | null
   healthStatus: "excellent" | "good" | "moderate" | "poor" | "critical"
   recommendations: string[]
 }
