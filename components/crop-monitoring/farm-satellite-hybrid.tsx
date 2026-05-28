@@ -27,41 +27,41 @@ export function FarmSatelliteHybrid({
   const [zoomLevel, setZoomLevel] = useState(13)
   const [lastUpdated, setLastUpdated] = useState<string>("")
 
-  // NASA GIBS Satellite Layers for Hybrid View
+  // NASA GIBS Satellite Layers for Hybrid View - Using corrected WMTS endpoints
   const satelliteLayers = [
     {
       id: "hybrid",
       name: "Satellite Hybrid",
       description: "True color satellite + map overlay showing field boundaries",
-      tileUrl: "https://gibs.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level3/{z}/{y}/{x}.jpg",
+      tileUrl: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
       overlay: "openstreetmap",
     },
     {
       id: "true-color",
       name: "True Color (NASA MODIS)",
       description: "Natural color satellite imagery from NASA MODIS Terra satellite",
-      tileUrl: "https://gibs.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level3/{z}/{y}/{x}.jpg",
+      tileUrl: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "vegetation",
       name: "Agriculture/Vegetation",
       description: "False color composite emphasizing healthy vegetation (green areas)",
-      tileUrl: "https://gibs.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_Bands721/default//GoogleMapsCompatible_Level3/{z}/{y}/{x}.jpg",
+      tileUrl: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_CorrectedReflectance_Bands721/default//GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "thermal",
       name: "Thermal/Temperature",
       description: "Infrared thermal data showing soil temperature and moisture stress",
-      tileUrl: "https://gibs.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_BrightnessTemp_Band31_Day/default//GoogleMapsCompatible_Level3/{z}/{y}/{x}.jpg",
+      tileUrl: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Terra_BrightnessTemp_Band31_Day/default//GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "aqua",
       name: "MODIS Aqua (Afternoon)",
       description: "Afternoon satellite pass showing afternoon vegetation conditions",
-      tileUrl: "https://gibs.earthdata.nasa.gov/wmts-webmerc/MODIS_Aqua_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level3/{z}/{y}/{x}.jpg",
+      tileUrl: "https://map1.vis.earthdata.nasa.gov/wmts-webmerc/MODIS_Aqua_CorrectedReflectance_TrueColor/default//GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
       overlay: null,
     },
   ]
@@ -137,6 +137,12 @@ export function FarmSatelliteHybrid({
           setLoading(false)
           return
         }
+
+        console.log("[v0] Loading satellite layer:", {
+          id: layer.id,
+          name: layer.name,
+          tileUrl: layer.tileUrl,
+        })
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl, {
           attribution: "NASA GIBS/MODIS",
@@ -222,7 +228,16 @@ export function FarmSatelliteHybrid({
 
     try {
       const layer = satelliteLayers.find((l) => l.id === selectedLayer)
-      if (!layer) return
+      if (!layer) {
+        console.warn("[v0] Layer not found:", selectedLayer)
+        return
+      }
+
+      console.log("[v0] Switching to satellite layer:", {
+        id: layer.id,
+        name: layer.name,
+        tileUrl: layer.tileUrl,
+      })
 
       // Remove all layers
       mapRef.current.eachLayer((l: any) => {
