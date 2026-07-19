@@ -28,10 +28,23 @@ export default function LoginPage() {
 
     try {
       console.log("[v0] Submitting login for:", email)
-      const result = await loginUser(email, password)
+      
+      if (!email || !password) {
+        setError("Email and password are required")
+        setIsLoading(false)
+        return
+      }
 
-      if (!result.success) {
-        throw new Error(result.message)
+      const result = await loginUser(email, password)
+      
+      console.log("[v0] Login result:", { success: result?.success })
+
+      if (!result?.success) {
+        const errorMsg = result?.message || "Login failed"
+        console.error("[v0] Login failed:", errorMsg)
+        setError(errorMsg)
+        setIsLoading(false)
+        return
       }
 
       console.log("[v0] Login successful, redirecting to dashboard")
@@ -40,10 +53,14 @@ export default function LoginPage() {
         router.push("/dashboard")
       }, 500)
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred"
+      let errorMessage = "An error occurred during login"
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === "string") {
+        errorMessage = error
+      }
       console.error("[v0] Login error:", errorMessage)
       setError(errorMessage)
-    } finally {
       setIsLoading(false)
     }
   }
