@@ -14,7 +14,15 @@ export async function loginUser(email: string, password: string) {
       return { success: false, message: errorMessage }
     }
 
-    const supabase = await createClient()
+    console.log("[v0] Creating Supabase server client...")
+    let supabase
+    try {
+      supabase = await createClient()
+    } catch (clientError) {
+      const errorMessage = clientError instanceof Error ? clientError.message : "Failed to initialize Supabase client"
+      console.error("[v0] Supabase client initialization error:", errorMessage)
+      return { success: false, message: `Configuration error: ${errorMessage}` }
+    }
 
     console.log("[v0] Supabase server client created, calling signInWithPassword")
 
