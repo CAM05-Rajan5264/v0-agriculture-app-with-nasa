@@ -1,8 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-
 export async function loginUser(email: string, password: string) {
   console.log("[v0] Server action: Logging in user", email)
 
@@ -65,7 +63,17 @@ export async function loginUser(email: string, password: string) {
         }
       }
       
-      return { success: false, message: errorMessage }
+      const normalizedMessage = errorMessage.toLowerCase()
+      if (normalizedMessage.includes("email not confirmed")) {
+        return { success: false, message: "Please confirm your email before signing in." }
+      }
+      if (normalizedMessage.includes("rate limit") || normalizedMessage.includes("too many")) {
+        return { success: false, message: "Too many attempts. Please wait a moment and try again." }
+      }
+      if (normalizedMessage.includes("invalid login") || normalizedMessage.includes("invalid credentials")) {
+        return { success: false, message: "Invalid email or password." }
+      }
+      return { success: false, message: "We could not sign you in. Please try again." }
     }
 
     if (!data?.session) {
