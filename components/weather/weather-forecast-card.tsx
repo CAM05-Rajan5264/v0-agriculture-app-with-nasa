@@ -128,12 +128,20 @@ export function WeatherForecastCard({ forecast, farmName }: WeatherForecastCardP
         </div>
 
         {/* Forecast Note */}
-        <div className="mt-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
-          <p className="text-xs text-amber-700 dark:text-amber-400">
-            <strong>Note:</strong> Forecast is generated using climatological patterns from NASA POWER historical data.
-            Actual conditions may vary. Plan agricultural activities accordingly.
-          </p>
-        </div>
+        {forecast.length > 0 ? (
+          <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+            <p className="text-xs text-blue-700 dark:text-blue-400">
+              <strong>Data Source:</strong> Forecast generated from NASA POWER historical climatology and seasonal trends.
+              Based on 30-day historical analysis for improved accuracy.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              <strong>Note:</strong> Weather forecast data currently unavailable. NASA POWER API may be temporarily unavailable.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

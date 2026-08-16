@@ -17,6 +17,13 @@ export function CheckAlertsButton() {
       const response = await fetch("/api/alerts/check", {
         method: "POST",
       })
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get("content-type")
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Invalid response format from server")
+      }
+
       const data = await response.json()
 
       if (response.ok) {
@@ -31,15 +38,15 @@ export function CheckAlertsButton() {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to check alerts",
+          description: data.error || data.message || "Failed to check alerts",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error checking alerts:", error)
+      console.error("[v0] Error checking alerts:", error)
       toast({
         title: "Error",
-        description: "Failed to check alerts. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to check alerts. Please try again.",
         variant: "destructive",
       })
     } finally {

@@ -13,55 +13,60 @@ export interface AlertTrigger {
 
 async function checkForecastDisasters(farm: Farm): Promise<AlertTrigger[]> {
   const alerts: AlertTrigger[] = []
-  const forecast = await getWeatherForecast(farm.latitude, farm.longitude, 7)
+  try {
+    const forecast = await getWeatherForecast(farm.latitude, farm.longitude)
 
-  for (let i = 0; i < Math.min(forecast.length, 5); i++) {
-    const day = forecast[i]
-    const dayLabel = i === 0 ? "Tomorrow" : `in ${i + 1} days`
+    for (let i = 0; i < Math.min(forecast.length, 5); i++) {
+      const day = forecast[i]
+      const dayLabel = i === 0 ? "Tomorrow" : `in ${i + 1} days`
 
-    // Frost forecast
-    if (day.tempMin < 2) {
-      alerts.push({
-        type: "frost",
-        severity: "critical",
-        title: `Frost Forecasted ${dayLabel}`,
-        message: `Temperature expected to drop to ${day.tempMin.toFixed(1)}°C at ${farm.name}. Prepare frost protection measures.`,
-        farmId: farm.id,
-      })
+      // Frost forecast
+      if (day.tempMin < 2) {
+        alerts.push({
+          type: "frost",
+          severity: "critical",
+          title: `Frost Forecasted ${dayLabel}`,
+          message: `Temperature expected to drop to ${day.tempMin.toFixed(1)}°C at ${farm.name}. Prepare frost protection measures.`,
+          farmId: farm.id,
+        })
+      }
+
+      // Heavy rain forecast
+      if (day.precipProbability > 70 && day.precipitation > 20) {
+        alerts.push({
+          type: "weather",
+          severity: "warning",
+          title: `Heavy Rain Expected ${dayLabel}`,
+          message: `${day.precipProbability}% chance of ${day.precipitation.toFixed(1)}mm rainfall at ${farm.name}. Check drainage systems.`,
+          farmId: farm.id,
+        })
+      }
+
+      // Extreme heat forecast
+      if (day.tempMax > 38) {
+        alerts.push({
+          type: "weather",
+          severity: "warning",
+          title: `Extreme Heat ${dayLabel}`,
+          message: `Temperature expected to reach ${day.tempMax.toFixed(1)}°C at ${farm.name}. Plan for heat stress mitigation.`,
+          farmId: farm.id,
+        })
+      }
+
+      // Strong winds forecast
+      if (day.windSpeed > 25) {
+        alerts.push({
+          type: "weather",
+          severity: "warning",
+          title: `Strong Winds Expected ${dayLabel}`,
+          message: `Wind speeds up to ${day.windSpeed.toFixed(1)} m/s expected at ${farm.name}. Secure equipment and structures.`,
+          farmId: farm.id,
+        })
+      }
     }
-
-    // Heavy rain forecast
-    if (day.precipProbability > 70 && day.rainfall > 20) {
-      alerts.push({
-        type: "weather",
-        severity: "warning",
-        title: `Heavy Rain Expected ${dayLabel}`,
-        message: `${day.precipProbability}% chance of ${day.rainfall.toFixed(1)}mm rainfall at ${farm.name}. Check drainage systems.`,
-        farmId: farm.id,
-      })
-    }
-
-    // Extreme heat forecast
-    if (day.tempMax > 38) {
-      alerts.push({
-        type: "weather",
-        severity: "warning",
-        title: `Extreme Heat ${dayLabel}`,
-        message: `Temperature expected to reach ${day.tempMax.toFixed(1)}°C at ${farm.name}. Plan for heat stress mitigation.`,
-        farmId: farm.id,
-      })
-    }
-
-    // Strong winds forecast
-    if (day.windSpeed > 25) {
-      alerts.push({
-        type: "weather",
-        severity: "warning",
-        title: `Strong Winds Expected ${dayLabel}`,
-        message: `Wind speeds up to ${day.windSpeed.toFixed(1)} m/s expected at ${farm.name}. Secure equipment and structures.`,
-        farmId: farm.id,
-      })
-    }
+  } catch (error) {
+    console.error("[v0] Error checking forecast disasters:", error)
+    // Return empty alerts if forecast fails instead of crashing
   }
 
   return alerts

@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     weather = await getWeatherData(primaryFarm.latitude, primaryFarm.longitude)
 
     if (primaryCrop) {
-      const ndvi = calculateNDVI(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.planting_date)
+      const ndvi = await calculateNDVI(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.planting_date)
       cropHealth = analyzeCropHealth(ndvi)
       irrigation = await getIrrigationStatus(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.name)
       phenology = await calculatePhenology(primaryCrop.name, primaryCrop.planting_date, primaryFarm.latitude, primaryFarm.longitude)
@@ -54,10 +54,13 @@ export default async function DashboardPage() {
 
   let healthyPercentage = 0
   if (crops && crops.length > 0) {
-    const healthyCount = crops.filter((crop) => {
-      const ndvi = calculateNDVI(crop.farms.latitude, crop.farms.longitude, crop.planting_date)
-      return ndvi >= 0.5
-    }).length
+    let healthyCount = 0
+    for (const crop of crops) {
+      const ndvi = await calculateNDVI(crop.farms.latitude, crop.farms.longitude, crop.planting_date)
+      if (ndvi !== null && ndvi >= 0.5) {
+        healthyCount++
+      }
+    }
     healthyPercentage = Math.round((healthyCount / crops.length) * 100)
   }
 
