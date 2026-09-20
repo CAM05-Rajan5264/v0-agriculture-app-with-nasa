@@ -20,10 +20,28 @@ interface CropField {
   plantedDaysAgo: number
 }
 
-const cropFields: CropField[] = []
+// Mock crop fields - in production these would come from database
+const mockCropFields: CropField[] = [
+  {
+    id: "field-1",
+    name: "North Field",
+    crop: "Corn",
+    latitude: 28.661395,
+    longitude: 77.092855,
+    plantedDaysAgo: 45,
+  },
+  {
+    id: "field-2",
+    name: "South Field",
+    crop: "Wheat",
+    latitude: 25.4026,
+    longitude: 82.9587,
+    plantedDaysAgo: 60,
+  },
+]
 
 export default function CropMonitoringPage() {
-  const [selectedFieldId, setSelectedFieldId] = useState<string>("")
+  const [selectedFieldId, setSelectedFieldId] = useState<string>(mockCropFields[0].id)
   const [monitoringData, setMonitoringData] = useState<CropMonitoringData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +52,7 @@ export default function CropMonitoringPage() {
         setLoading(true)
         setError(null)
 
-        const field = cropFields.find((f) => f.id === selectedFieldId)
+        const field = mockCropFields.find((f) => f.id === selectedFieldId)
         if (!field) return
 
         // Fetch weather data from NASA POWER
@@ -48,9 +66,9 @@ export default function CropMonitoringPage() {
           field.longitude,
           field.plantedDaysAgo,
           {
-            temperature: weatherData.temperature,
-            humidity: weatherData.humidity,
-            precipitation: weatherData.precipitation,
+            temperature: weatherData.temperature || 25,
+            humidity: weatherData.humidity || 60,
+            precipitation: weatherData.precipitation || 5,
           },
         )
 
@@ -65,7 +83,7 @@ export default function CropMonitoringPage() {
     fetchMonitoringData()
   }, [selectedFieldId])
 
-  const field = cropFields.find((f) => f.id === selectedFieldId)
+  const field = mockCropFields.find((f) => f.id === selectedFieldId)
 
   return (
     <div className="space-y-6">
@@ -79,7 +97,7 @@ export default function CropMonitoringPage() {
 
       {/* Field Selection */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {cropFields.map((f) => (
+        {mockCropFields.map((f) => (
           <button
             key={f.id}
             onClick={() => setSelectedFieldId(f.id)}
