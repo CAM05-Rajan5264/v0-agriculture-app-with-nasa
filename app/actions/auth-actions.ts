@@ -1,6 +1,8 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+
 export async function loginUser(email: string, password: string) {
   console.log("[v0] Server action: Logging in user", email)
 
@@ -83,7 +85,7 @@ export async function loginUser(email: string, password: string) {
       return { success: false, message: errorMessage }
     }
 
-    console.log("[v0] User logged in successfully")
+    console.log("[v0] User logged in successfully with session id:", data.session.user?.id)
     return { success: true, message: "Login successful" }
   } catch (error: unknown) {
     let message = "An error occurred during login"

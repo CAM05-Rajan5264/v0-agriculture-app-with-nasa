@@ -48,8 +48,10 @@ export default function LoginPage() {
       }
 
       console.log("[v0] Login successful, redirecting to dashboard")
-      router.replace("/dashboard")
-      router.refresh()
+      // Use a small delay to allow session to be established
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500)
     } catch (error: unknown) {
       let errorMessage = "An error occurred during login"
       if (error instanceof Error) {
