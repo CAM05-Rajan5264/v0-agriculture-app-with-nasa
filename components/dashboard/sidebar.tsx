@@ -19,6 +19,7 @@ import {
   Code,
   Activity,
   Leaf,
+  GraduationCap,
 } from "lucide-react"
 
 const navigation = [
@@ -30,6 +31,7 @@ const navigation = [
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
+  { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
 ]
