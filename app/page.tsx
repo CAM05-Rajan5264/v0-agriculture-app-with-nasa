@@ -202,11 +202,19 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <FarmPulseLogo size="sm" />
-            <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground md:items-end">
-              <p>Powered by NASA POWER API - Satellite data for smarter agriculture</p>
-              <p className="text-xs">Developed by Rajan Space Apps</p>
+            <div className="flex items-center gap-4">
+              <img
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202026-06-26%20at%2019.31.52-WTCTl04t4W2CtbtBCVz7PDghI3j8QE.jpeg"
+                alt="Rajan Kumar Singh"
+                className="h-14 w-14 rounded-full border-2 border-primary/20 object-cover object-top shadow-sm"
+              />
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <p>Powered by NASA POWER API - Satellite data for smarter agriculture</p>
+                <p className="text-xs">Developed by Rajan Kumar Singh</p>
+                <p className="text-xs">A community initiative for NASA Space Apps Challenge 2026.</p>
+              </div>
             </div>
           </div>
         </div>
