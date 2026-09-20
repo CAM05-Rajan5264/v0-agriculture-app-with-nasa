@@ -78,6 +78,19 @@ export default function HomePage() {
                 Powered by NASA POWER API
               </div>
 
+              <div className="farmpulse-demo-video mb-10">
+                <div className="farmpulse-demo-video__header">
+                  <span>30-second product demo</span>
+                  <span aria-hidden="true">Auto-playing preview</span>
+                </div>
+                <iframe
+                  title="30-second FarmPulse demo"
+                  src="/demo?embed=1"
+                  className="farmpulse-demo-video__frame"
+                  loading="eager"
+                />
+              </div>
+
               <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl">
                 Your Farm&apos;s
                 <span className="relative mx-3 text-primary">
