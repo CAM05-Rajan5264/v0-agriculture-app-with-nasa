@@ -15,6 +15,7 @@ import {
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MapPin, Sprout, Activity } from "lucide-react"
+import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -86,6 +87,8 @@ export default async function DashboardPage() {
           alertCount={unreadAlerts || 0}
           healthyPercentage={healthyPercentage}
         />
+
+        <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
         {!primaryFarm ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-10 md:py-16 px-4 backdrop-blur-sm">
