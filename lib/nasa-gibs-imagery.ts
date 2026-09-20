@@ -115,15 +115,15 @@ export async function getSatelliteMetadata(
     })
 
     if (!response.ok) {
-      console.warn("[v0] NASA CMR API not available, using default metadata")
-      return getDefaultSatelliteMetadata()
+      console.warn("[v0] NASA CMR API unavailable; no satellite metadata returned")
+      return []
     }
 
     const data = await response.json()
 
     if (!data.feed?.entry || data.feed.entry.length === 0) {
-      console.warn("[v0] No satellite data found for location, using default metadata")
-      return getDefaultSatelliteMetadata()
+      console.warn("[v0] No NASA satellite data found for location")
+      return []
     }
 
     console.log(`[v0] Found ${data.feed.entry.length} satellite granules`)
@@ -141,31 +141,9 @@ export async function getSatelliteMetadata(
       }
     })
   } catch (error) {
-    console.error("[v0] Error fetching satellite metadata:", error)
-    return getDefaultSatelliteMetadata()
+    console.error("[v0] Error fetching NASA satellite metadata:", error)
+    return []
   }
-}
-
-/**
- * Get default satellite metadata when API is unavailable
- */
-function getDefaultSatelliteMetadata(): SatelliteMetadata[] {
-  const today = new Date()
-  const metadata: SatelliteMetadata[] = []
-
-  // Generate metadata for last 7 days
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000)
-    metadata.push({
-      date: date.toISOString().split("T")[0],
-      cloudCover: Math.random() * 60, // 0-60% cloud cover
-      quality: Math.random() > 0.3 ? "good" : "fair",
-      resolution: "1km",
-      satellite: "MODIS Terra",
-    })
-  }
-
-  return metadata
 }
 
 /**
