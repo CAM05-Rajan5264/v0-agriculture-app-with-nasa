@@ -32,7 +32,33 @@ export async function POST(request: Request) {
       }),
     })
 
-    const payload = await response.json()
+    const responseText = await response.text()
+    let payload: {
+      result?: { crop?: { suggestions?: { name?: string; probability?: number }[] }; disease?: { suggestions?: { name?: string; probability?: number }[] } }
+      message?: string
+      access_token?: string
+    } = {}
+    try {
+      payload = responseText ? JSON.parse(responseText) : {}
+    } catch {
+      return NextResponse.json(
+        { error: response.ok ? "The diagnosis service returned an unreadable response. Please try a clearer image." : `Kindwise diagnosis failed (${response.status}). Please check the configured API key.` },
+        { status: response.ok ? 502 : response.status },
+      )
+    }
+
+    if (response.ok && payload.access_token && !payload.result) {
+      const resultResponse = await fetch(`https://crop.kindwise.com/api/v1/identification/${payload.access_token}`, {
+        headers: { "Api-Key": apiKey },
+      })
+      const resultText = await resultResponse.text()
+      try {
+        payload = resultText ? JSON.parse(resultText) : payload
+      } catch {
+        return NextResponse.json({ error: "Kindwise returned an incomplete diagnosis. Please try again." }, { status: 502 })
+      }
+    }
+
     if (response.ok) {
       const cropSuggestion = payload.result?.crop?.suggestions?.[0]
       const diseaseSuggestions = payload.result?.disease?.suggestions || []
@@ -66,10 +92,22 @@ export async function POST(request: Request) {
           }],
         }),
       })
-      const visionPayload = await visionResponse.json()
+      const visionText = await visionResponse.text()
+      let visionPayload: { choices?: { message?: { content?: string } }[] } = {}
+      try {
+        visionPayload = visionText ? JSON.parse(visionText) : {}
+      } catch {
+        visionPayload = {}
+      }
       if (visionResponse.ok) {
         const content = visionPayload.choices?.[0]?.message?.content
-        if (content) return NextResponse.json({ result: JSON.parse(content), source: "vision" })
+        if (content) {
+          try {
+            return NextResponse.json({ result: JSON.parse(content), source: "vision" })
+          } catch {
+            return NextResponse.json({ error: "The vision service returned an invalid diagnosis. Please try again." }, { status: 502 })
+          }
+        }
       }
     }
 
