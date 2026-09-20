@@ -204,9 +204,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <FarmPulseLogo size="sm" />
-            <p className="text-sm text-muted-foreground">
-              Powered by NASA POWER API - Satellite data for smarter agriculture
-            </p>
+            <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground md:items-end">
+              <p>Powered by NASA POWER API - Satellite data for smarter agriculture</p>
+              <p className="text-xs">Developed by Rajan Space Apps</p>
+            </div>
           </div>
         </div>
       </footer>
