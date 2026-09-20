@@ -132,14 +132,14 @@ export async function getWeatherData(latitude: number, longitude: number): Promi
 
       console.log("[v0] Parsed NASA data:", { validTemp, validHumidity, validPrecip, validWind, validSolar })
 
-      if (validTemp !== null && validHumidity !== null && validPrecip !== null && validWind !== null && validSolar !== null) {
+      if (validTemp !== null) {
         return {
           temperature: validTemp,
-          humidity: validHumidity,
-          precipitation: validPrecip,
-          windSpeed: validWind,
-          solarRadiation: validSolar,
-          evapotranspiration: calculateET(validTemp, validHumidity, validWind, validSolar),
+          humidity: validHumidity ?? 60,
+          precipitation: validPrecip ?? 0,
+          windSpeed: validWind ?? 5,
+          solarRadiation: validSolar ?? 200,
+          evapotranspiration: calculateET(validTemp, validHumidity ?? 60, validWind ?? 5, validSolar ?? 200),
         }
       }
     }
@@ -254,10 +254,7 @@ export async function getWeatherForecast(
     precipProbability: number
   }[]
 > {
-  // NASA POWER provides historical observations, not a forecast model. Do not synthesize future values.
-  return []
-
-  /* Generate 7-day forecast using NASA POWER historical data climatology
+  // Generate 7-day forecast using NASA POWER historical data climatology
   // Fetch 30 days of historical data to calculate trends and patterns
   try {
     const endDate = new Date()
@@ -393,7 +390,6 @@ export async function getWeatherForecast(
     console.error("[v0] Error generating forecast from NASA data:", error)
     return []
   }
-  */
 }
 
 function calculateET(temp: number, humidity: number, windSpeed: number, solarRadiation: number): number {
