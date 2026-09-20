@@ -112,7 +112,59 @@
   }
 }
 
-/* Animation keyframes */
+  .demo-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: #071b17;
+    font-family: var(--font-sans), Arial, sans-serif;
+  }
+  .demo-stage {
+    position: relative;
+    overflow: hidden;
+    width: min(100%, 1200px);
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(24px, 5vw, 64px);
+    color: #f7f7ed;
+    background: radial-gradient(circle at 80% 20%, #20865e 0, #0b3c2d 34%, #071b17 75%);
+    border-radius: 24px;
+    box-shadow: 0 30px 100px rgba(0, 0, 0, .35);
+  }
+  .demo-stage.dashboard { background: radial-gradient(circle at 80% 25%, #d5f0d0 0, #1c7651 28%, #092a21 76%); }
+  .demo-stage.crop { background: radial-gradient(circle at 70% 45%, #5bbd62 0, #173e2b 33%, #071b17 75%); }
+  .demo-stage.weather { background: radial-gradient(circle at 78% 22%, #8bd8d2 0, #185b61 33%, #09262a 78%); }
+  .demo-stage.end { background: radial-gradient(circle at 50% 35%, #168b5a 0, #0b3c2d 35%, #071b17 78%); }
+  .demo-noise { position: absolute; inset: 0; opacity: .08; pointer-events: none; background-image: radial-gradient(#fff 0.6px, transparent .6px); background-size: 6px 6px; }
+  .demo-header, .demo-footer { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .demo-brand { display: flex; align-items: center; gap: 10px; font-size: clamp(16px, 2vw, 24px); font-weight: 700; }
+  .demo-brand > span:last-child span { color: #8ee6ad; }
+  .demo-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #0b7650; background: #d7f4dc; font-size: 28px; }
+  .demo-timestamp, .demo-footer { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: rgba(247,247,237,.72); }
+  .demo-content { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 8%; }
+  .demo-copy { max-width: 560px; }
+  .demo-kicker { margin: 0 0 18px; color: #9ce7b8; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .demo-copy h1 { margin: 0; font-size: clamp(32px, 5vw, 76px); line-height: .98; letter-spacing: -.05em; }
+  .demo-body { max-width: 460px; margin: 24px 0 0; color: rgba(247,247,237,.76); font-size: clamp(15px, 1.7vw, 22px); line-height: 1.4; }
+  .demo-visual { position: relative; min-height: 250px; }
+  .visual-orbit { position: absolute; right: 4%; top: 2%; width: min(90%, 340px); aspect-ratio: 1; border: 1px solid rgba(210,255,224,.35); border-radius: 50%; box-shadow: 0 0 0 26px rgba(180,247,197,.05), 0 0 0 52px rgba(180,247,197,.04); }
+  .visual-orbit::before { content: ''; position: absolute; inset: 18%; border: 1px dashed rgba(210,255,224,.4); border-radius: 50%; }
+  .visual-card { position: absolute; z-index: 2; display: grid; gap: 4px; width: 190px; padding: 18px; border: 1px solid rgba(255,255,255,.18); border-radius: 16px; background: rgba(9,44,32,.64); backdrop-filter: blur(14px); box-shadow: 0 18px 40px rgba(0,0,0,.2); }
+  .visual-card span, .visual-card small { color: rgba(247,247,237,.66); font-size: 11px; }
+  .visual-card strong { font-size: 28px; color: #bcf2c7; }
+  .card-a { left: 0; top: 18%; } .card-b { right: 0; bottom: 8%; }
+  .visual-chart { position: absolute; left: 20%; bottom: 0; display: flex; align-items: end; gap: 7px; height: 72px; opacity: .75; }
+  .visual-chart i { display: block; width: 10px; border-radius: 10px 10px 2px 2px; background: #9ce7b8; } .visual-chart i:nth-child(1) { height: 24%; } .visual-chart i:nth-child(2) { height: 42%; } .visual-chart i:nth-child(3) { height: 31%; } .visual-chart i:nth-child(4) { height: 65%; } .visual-chart i:nth-child(5) { height: 51%; } .visual-chart i:nth-child(6) { height: 78%; } .visual-chart i:nth-child(7) { height: 92%; }
+  .demo-footer { display: flex; align-items: center; }
+  .demo-progress { flex: 1; max-width: 420px; height: 3px; overflow: hidden; background: rgba(255,255,255,.18); border-radius: 4px; }
+  .demo-progress span { display: block; height: 100%; background: #9ce7b8; transition: width .6s ease; }
+  .demo-hint { margin: 12px 0 0; color: rgba(255,255,255,.5); font-size: 12px; text-align: center; }
+  @media (max-width: 700px) { .demo-stage { aspect-ratio: auto; min-height: 620px; } .demo-content { grid-template-columns: 1fr; gap: 20px; } .demo-visual { min-height: 210px; } .demo-footer span:last-child { display: none; } }
+
+  /* Animation keyframes */
 @keyframes accordion-down {
   from {
     height: 0;
