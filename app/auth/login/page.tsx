@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { FarmPulseLogo } from "@/components/ui/farmpulse-logo"
 import Image from "next/image"
@@ -19,7 +18,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +46,7 @@ export default function LoginPage() {
       }
 
       console.log("[v0] Login successful, redirecting to dashboard")
-      router.replace("/dashboard")
-      router.refresh()
+      window.location.assign("/dashboard")
     } catch (error: unknown) {
       let errorMessage = "An error occurred during login"
       if (error instanceof Error) {
