@@ -66,7 +66,7 @@ export default function FarmAssistantPage() {
         <header>
           <p className="text-sm font-medium text-primary">FarmPulse Assistant</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Your on-demand farming guide</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">Get practical, weather-aware guidance for crops, soil, irrigation, and sustainable farm decisions.</p>
+          <p className="mt-2 max-w-2xl text-muted-foreground">Get short, practical guidance for crops, soil, irrigation, and sustainable farm decisions.</p>
         </header>
 
         <Card className="overflow-hidden">
