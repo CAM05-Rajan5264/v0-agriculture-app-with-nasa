@@ -36,7 +36,11 @@ export default function FarmAssistantPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       })
-      if (!response.ok || !response.body) throw new Error("Assistant unavailable")
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => null)
+        throw new Error(errorPayload?.error || "Assistant unavailable")
+      }
+      if (!response.body) throw new Error("Assistant returned no response")
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -48,8 +52,9 @@ export default function FarmAssistantPage() {
         answer += decoder.decode(value, { stream: true })
         setMessages([...nextMessages, { role: "assistant", content: answer }])
       }
-    } catch {
-      setMessages([...nextMessages, { role: "assistant", content: "I couldn’t connect right now. Please try again in a moment." }])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "I couldn’t connect right now. Please try again in a moment."
+      setMessages([...nextMessages, { role: "assistant", content: message }])
     } finally {
       setIsLoading(false)
     }
