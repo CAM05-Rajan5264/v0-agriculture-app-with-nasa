@@ -56,16 +56,27 @@ export async function loginUser(email: string, password: string) {
     if (error) {
       const errorMessage = error?.message || "Login failed"
       console.error("[v0] Supabase auth error:", errorMessage)
-      
-      // Check for service unavailability errors
+
       if (errorMessage.includes("521") || errorMessage.includes("502") || errorMessage.includes("503") || errorMessage.includes("Web server is down")) {
-        return { 
-          success: false, 
-          message: "Authentication service is temporarily unavailable. Please try again in a few moments." 
+        return {
+          success: false,
+          message: "Authentication service is temporarily unavailable. Please try again in a few moments.",
         }
       }
-      
-      return { success: false, message: errorMessage }
+
+      if (error.code === "email_not_confirmed") {
+        return { success: false, message: "Please confirm your email address before signing in." }
+      }
+
+      if (error.code === "invalid_credentials") {
+        return { success: false, message: "Invalid email or password." }
+      }
+
+      if (error.status === 429 || error.code === "over_request_rate_limit") {
+        return { success: false, message: "Too many attempts. Please wait a moment and try again." }
+      }
+
+      return { success: false, message: "Something went wrong. Please try again." }
     }
 
     if (!data?.session) {
