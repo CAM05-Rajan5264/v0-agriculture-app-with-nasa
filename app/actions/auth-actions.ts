@@ -85,9 +85,19 @@ export async function loginUser(email: string, password: string) {
       return { success: false, message: errorMessage }
     }
 
-    console.log("[v0] User logged in successfully with session id:", data.session.user?.id)
-    return { success: true, message: "Login successful" }
+    console.log("[v0] User logged in successfully")
+    redirect("/dashboard")
   } catch (error: unknown) {
+    // Next.js uses a thrown internal error to complete redirect(). Do not turn it into a login error.
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      String(error.digest).startsWith("NEXT_REDIRECT")
+    ) {
+      throw error
+    }
+
     let message = "An error occurred during login"
     if (error instanceof Error) {
       message = error.message
