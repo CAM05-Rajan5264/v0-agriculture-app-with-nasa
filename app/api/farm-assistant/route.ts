@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         messages: [{ role: "system", content: systemPrompt }, ...messages.slice(-12)],
-        max_tokens: 220,
+        max_tokens: 360,
         temperature: 0.2,
       }),
     })
@@ -35,12 +35,19 @@ export async function POST(request: Request) {
       return Response.json({ error: "The farm assistant could not answer right now. Please try again." }, { status: 502 })
     }
 
-    const answer = payload.choices?.[0]?.message?.content?.trim()
+    const message = payload.choices?.[0]?.message
+    const answer = (message?.content || message?.reasoning)?.trim()
     if (!answer) {
+      console.error("[v0] Farm assistant returned no message content")
       return Response.json({ error: "The farm assistant returned an empty answer. Please try again." }, { status: 502 })
     }
 
-    return new Response(answer, { headers: { "Content-Type": "text/plain; charset=utf-8" } })
+    return new Response(answer, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    })
   } catch (error) {
     console.error("[v0] Farm assistant request failed", error)
     return Response.json({ error: "The farm assistant is temporarily unavailable." }, { status: 500 })
