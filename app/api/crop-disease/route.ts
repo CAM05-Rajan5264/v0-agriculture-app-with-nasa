@@ -15,27 +15,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Image must be smaller than 8 MB." }, { status: 413 })
     }
 
-    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY
+    const apiKey = process.env.KINDWISE_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: "Crop diagnosis is not configured yet." }, { status: 503 })
     }
 
     const bytes = Buffer.from(await image.arrayBuffer())
-    const imageData = `data:${image.type};base64,${bytes.toString("base64")}`
-    const response = await fetch("https://api.plant.id/v2/identify", {
+    const imageData = bytes.toString("base64")
+    const response = await fetch("https://crop.kindwise.com/api/v1/identification", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Api-Key": apiKey },
       body: JSON.stringify({
         images: [imageData],
-        health: "all",
-        modifiers: ["crops_fast", "similar_images"],
-        plant_details: ["common_names", "taxonomy", "url"],
+        similar_images: true,
+        details: ["common_names", "description", "treatment", "url"],
       }),
     })
 
     const payload = await response.json()
     if (response.ok) {
-      return NextResponse.json({ result: payload })
+      const cropSuggestion = payload.result?.crop?.suggestions?.[0]
+      const diseaseSuggestions = payload.result?.disease?.suggestions || []
+      return NextResponse.json({
+        result: {
+          plant: cropSuggestion && { name: cropSuggestion.name, probability: cropSuggestion.probability },
+          disease: diseaseSuggestions.map((suggestion: { name?: string; probability?: number }) => ({ name: suggestion.name, probability: suggestion.probability })),
+          is_healthy: diseaseSuggestions.length === 0 || diseaseSuggestions[0]?.name?.toLowerCase() === "healthy",
+          notes: "Powered by Kindwise Crop.health. Confirm serious symptoms with a local agronomist.",
+        },
+      })
     }
 
     if (response.status === 401 && process.env.OPENAI_API_KEY) {
@@ -53,7 +61,7 @@ export async function POST(request: Request) {
             role: "user",
             content: [
               { type: "text", text: "Analyze this crop image for visible disease. Return only JSON with this shape: {is_healthy:boolean, plant:{name:string,probability:number}, disease:[{name:string,probability:number}], notes:string}. Probabilities must be between 0 and 1. If uncertain, say so in notes and use low probabilities." },
-              { type: "image_url", image_url: { url: imageData, detail: "high" } },
+              { type: "image_url", image_url: { url: `data:${image.type};base64,${imageData}`, detail: "high" } },
             ],
           }],
         }),
