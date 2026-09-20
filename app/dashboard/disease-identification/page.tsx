@@ -11,6 +11,7 @@ type Diagnosis = {
   disease?: { name?: string; probability?: number }[]
   is_healthy?: boolean
   plant?: { name?: string; probability?: number }
+  notes?: string
 }
 
 export default function DiseaseIdentificationPage() {
@@ -111,7 +112,7 @@ export default function DiseaseIdentificationPage() {
               {loading && <div className="flex min-h-72 flex-col items-center justify-center text-center"><Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" /><p className="font-medium">Examining leaf patterns...</p><p className="mt-1 text-sm text-muted-foreground">This can take a few seconds.</p></div>}
               {diagnosis && !loading && <div className="space-y-6">
                 <div className="rounded-xl border bg-primary/[0.04] p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm text-muted-foreground">Detected crop</p><p className="mt-1 text-xl font-semibold">{plantName}</p></div><CheckCircle2 className="h-6 w-6 text-primary" /></div></div>
-                <div><div className="flex items-center justify-between"><p className="font-semibold">{diagnosis.is_healthy ? "Plant appears healthy" : topDisease?.name || "Possible crop health issue"}</p><span className="text-sm font-semibold text-primary">{confidence}% match</span></div><Progress value={confidence} className="mt-3 h-2" /><p className="mt-3 text-sm text-muted-foreground">Use this result as an early signal. Confirm severe or spreading symptoms with a local agronomist before treating.</p></div>
+                <div><div className="flex items-center justify-between"><p className="font-semibold">{diagnosis.is_healthy ? "Plant appears healthy" : topDisease?.name || "Possible crop health issue"}</p><span className="text-sm font-semibold text-primary">{confidence}% match</span></div><Progress value={confidence} className="mt-3 h-2" /><p className="mt-3 text-sm text-muted-foreground">Use this result as an early signal. Confirm severe or spreading symptoms with a local agronomist before treating.</p>{diagnosis.notes && <p className="mt-2 rounded-md bg-muted/60 p-2 text-sm text-muted-foreground">{diagnosis.notes}</p>}</div>
                 {!diagnosis.is_healthy && <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm"><p className="font-semibold text-amber-800">Recommended next step</p><p className="mt-1 text-amber-700">Isolate affected plants, avoid overhead watering, and inspect nearby leaves for the same symptoms.</p></div>}
               </div>}
             </CardContent>
