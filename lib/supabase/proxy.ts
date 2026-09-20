@@ -34,16 +34,8 @@ export async function updateSession(request: NextRequest) {
       },
     )
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    // Protect dashboard routes
-    if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
-      const url = request.nextUrl.clone()
-      url.pathname = "/auth/login"
-      return NextResponse.redirect(url)
-    }
+    // Refresh the Supabase session cookies without requiring authentication.
+    await supabase.auth.getUser()
   } catch (error) {
     console.error("[v0] Middleware error:", error instanceof Error ? error.message : "Unknown error")
   }
