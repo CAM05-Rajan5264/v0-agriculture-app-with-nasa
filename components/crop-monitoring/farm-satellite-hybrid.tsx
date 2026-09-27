@@ -26,9 +26,7 @@ export function FarmSatelliteHybrid({
   const [selectedLayer, setSelectedLayer] = useState<string>("hybrid")
   const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
-  const [imageryRefreshKey, setImageryRefreshKey] = useState(0)
-  // NASA MODIS is near-real-time, not live video; allow processing latency while using the newest reliable pass.
-  const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const gibsDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   // NASA GIBS Satellite Layers for Hybrid View - Using correct WMTS REST API
   const satelliteLayers = [
@@ -157,13 +155,12 @@ export function FarmSatelliteHybrid({
           tileUrl: layer.tileUrl,
         })
 
-        const satelliteLayer = window.L.tileLayer(`${layer.tileUrl.replace("__GIBS_DATE__", gibsDate)}?v=${imageryRefreshKey}`, {
+        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
           attribution: "NASA GIBS/MODIS",
-          maxZoom: 19,
-          minZoom: 3,
-          maxNativeZoom: 9,
-          opacity: selectedLayer === "hybrid" ? 0.42 : 1,
-          crossOrigin: "anonymous",
+        maxZoom: 9,
+        minZoom: 3,
+        opacity: selectedLayer === "hybrid" ? 0.35 : 0.62,
+        crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
         })
@@ -238,10 +235,7 @@ export function FarmSatelliteHybrid({
     }
 
     loadMapLibraries()
-
-    const refreshTimer = window.setInterval(() => setImageryRefreshKey((value) => value + 1), 15 * 60 * 1000)
-    return () => window.clearInterval(refreshTimer)
-  }, [latitude, longitude, fieldName, cropName, selectedLayer, imageryRefreshKey])
+  }, [latitude, longitude, fieldName, cropName, selectedLayer])
 
   const handleZoom = (direction: "in" | "out") => {
     if (!mapRef.current) return
@@ -264,7 +258,7 @@ export function FarmSatelliteHybrid({
             </div>
             <div className="flex-1">
               <CardTitle>Farm Satellite Hybrid Imaging</CardTitle>
-              <CardDescription>Latest available satellite pass with NASA MODIS crop signals for {fieldName}</CardDescription>
+              <CardDescription>High-resolution farm imagery with NASA MODIS crop signals for {fieldName}</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -280,10 +274,7 @@ export function FarmSatelliteHybrid({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setImageryRefreshKey((value) => value + 1)
-                mapRef.current?.setView([latitude, longitude], zoomLevel)
-              }}
+              onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
               disabled={loading}
               className="gap-2"
             >
@@ -299,7 +290,7 @@ export function FarmSatelliteHybrid({
         <div className="flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
-            <span className="text-muted-foreground">Near-real-time NASA MODIS + high-resolution imagery</span>
+            <span className="text-muted-foreground">Esri World Imagery + NASA MODIS</span>
           </div>
           {lastUpdated && <span className="text-muted-foreground">Updated: {lastUpdated}</span>}
         </div>
@@ -344,7 +335,7 @@ export function FarmSatelliteHybrid({
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={() => handleZoom("out")}
-                disabled={loading || zoomLevel <= 3}
+                disabled={loading || zoomLevel <= 1}
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -375,13 +366,7 @@ export function FarmSatelliteHybrid({
             {satelliteLayers.map((layer) => (
               <button
                 key={layer.id}
-                onClick={() => {
-                  if (selectedLayer !== layer.id) {
-                    setError(null)
-                    setLoading(true)
-                    setSelectedLayer(layer.id)
-                  }
-                }}
+                onClick={() => setSelectedLayer(layer.id)}
                 className={`relative rounded-lg border-2 p-3 text-left transition-all duration-200 ${
                   selectedLayer === layer.id
                     ? "border-primary bg-primary/5"
