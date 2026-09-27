@@ -66,9 +66,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-full flex-col bg-[radial-gradient(circle_at_top_right,oklch(0.97_0.05_155),transparent_34%),linear-gradient(135deg,oklch(0.99_0.003_90),oklch(0.96_0.018_150))]">
       <Header title="Dashboard" unreadAlerts={unreadAlerts || 0} />
-      <div className="space-y-4 md:space-y-6 p-4 md:p-6">
+      <div className="space-y-4 p-4 md:space-y-6 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
             <Activity className="h-5 w-5 md:h-6 md:w-6 text-primary" />
