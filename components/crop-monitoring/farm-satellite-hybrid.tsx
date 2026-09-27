@@ -26,7 +26,9 @@ export function FarmSatelliteHybrid({
   const [selectedLayer, setSelectedLayer] = useState<string>("hybrid")
   const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
-  const gibsDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const [imageryRefreshKey, setImageryRefreshKey] = useState(0)
+  // NASA MODIS is near-real-time, not live video; allow processing latency while using the newest reliable pass.
+  const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   // NASA GIBS Satellite Layers for Hybrid View - Using correct WMTS REST API
   const satelliteLayers = [
@@ -235,7 +237,10 @@ export function FarmSatelliteHybrid({
     }
 
     loadMapLibraries()
-  }, [latitude, longitude, fieldName, cropName, selectedLayer])
+
+    const refreshTimer = window.setInterval(() => setImageryRefreshKey((value) => value + 1), 15 * 60 * 1000)
+    return () => window.clearInterval(refreshTimer)
+  }, [latitude, longitude, fieldName, cropName, selectedLayer, imageryRefreshKey])
 
   const handleZoom = (direction: "in" | "out") => {
     if (!mapRef.current) return
@@ -258,7 +263,7 @@ export function FarmSatelliteHybrid({
             </div>
             <div className="flex-1">
               <CardTitle>Farm Satellite Hybrid Imaging</CardTitle>
-              <CardDescription>High-resolution farm imagery with NASA MODIS crop signals for {fieldName}</CardDescription>
+              <CardDescription>Latest available satellite pass with NASA MODIS crop signals for {fieldName}</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -274,7 +279,10 @@ export function FarmSatelliteHybrid({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
+              onClick={() => {
+                setImageryRefreshKey((value) => value + 1)
+                mapRef.current?.setView([latitude, longitude], zoomLevel)
+              }}
               disabled={loading}
               className="gap-2"
             >
@@ -290,7 +298,7 @@ export function FarmSatelliteHybrid({
         <div className="flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
-            <span className="text-muted-foreground">Esri World Imagery + NASA MODIS</span>
+            <span className="text-muted-foreground">Near-real-time NASA MODIS + high-resolution imagery</span>
           </div>
           {lastUpdated && <span className="text-muted-foreground">Updated: {lastUpdated}</span>}
         </div>
