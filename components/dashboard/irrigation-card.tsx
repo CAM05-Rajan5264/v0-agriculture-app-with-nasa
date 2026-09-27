@@ -13,7 +13,7 @@ interface IrrigationCardProps {
 
 export function IrrigationCard({ irrigation, farmName }: IrrigationCardProps) {
   return (
-    <Card className="border-border bg-card">
+    <Card className="glossy-surface overflow-hidden border-white/70">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg text-foreground">

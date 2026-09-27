@@ -16,6 +16,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MapPin, Sprout, Activity } from "lucide-react"
 import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
+import { GlossyInsights, GlossyStatus } from "@/components/dashboard/glossy-insights"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -73,7 +74,8 @@ export default async function DashboardPage() {
           <div className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
             <Activity className="h-5 w-5 md:h-6 md:w-6 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
+            <div className="mb-2"><GlossyStatus /></div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Welcome to FarmPulse</h2>
             <p className="text-sm md:text-base text-muted-foreground">
               Monitor your farm&apos;s vital signs with NASA satellite data
@@ -88,10 +90,12 @@ export default async function DashboardPage() {
           healthyPercentage={healthyPercentage}
         />
 
+        <GlossyInsights />
+
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
         {!primaryFarm ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-10 md:py-16 px-4 backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center glossy-surface rounded-2xl border-dashed py-10 md:py-16 px-4 backdrop-blur-sm">
             <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-primary/10">
               <MapPin className="h-7 w-7 md:h-8 md:w-8 text-primary" />
             </div>
@@ -110,7 +114,7 @@ export default async function DashboardPage() {
             {weather && <WeatherCard weather={weather} locationName={primaryFarm.location_name} />}
 
             {!primaryCrop ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-10 md:py-12 px-4 backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center glossy-surface rounded-2xl border-dashed py-10 md:py-12 px-4 backdrop-blur-sm">
                 <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-primary/10">
                   <Sprout className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                 </div>
