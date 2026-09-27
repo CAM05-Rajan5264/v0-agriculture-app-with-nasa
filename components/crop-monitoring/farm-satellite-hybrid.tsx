@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, MapPin, Layers, ZoomIn, ZoomOut, RefreshCw } from "lucide-react"
+import { AlertCircle, MapPin, Layers, ZoomIn, ZoomOut, RefreshCw, ExternalLink } from "lucide-react"
 
 interface FarmSatelliteHybridProps {
   latitude: number
@@ -24,7 +24,7 @@ export function FarmSatelliteHybrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLayer, setSelectedLayer] = useState<string>("hybrid")
-  const [zoomLevel, setZoomLevel] = useState(9)
+  const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const gibsDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
@@ -120,15 +120,25 @@ export function FarmSatelliteHybrid({
         const map = window.L.map(mapContainerRef.current, {
           center: [latitude, longitude],
           zoom: zoomLevel,
+          minZoom: 3,
+          maxZoom: 19,
+          zoomControl: false,
           attributionControl: true,
         })
 
-        // Add base layer (OpenStreetMap for map overlay)
+        // Use a high-resolution imagery basemap for close farm inspection.
+        // NASA MODIS is valuable for regional crop signals, but its native pixels are not detailed enough for field-level zoom.
+        const esriImageryLayer = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
+          maxZoom: 19,
+          minZoom: 3,
+          maxNativeZoom: 18,
+        })
         const osmLayer = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 9,
-          minZoom: 1,
-          opacity: selectedLayer === "hybrid" ? 0.3 : 0,
+          maxZoom: 19,
+          minZoom: 3,
+          opacity: 0.35,
         })
 
         // Add NASA GIBS satellite layer
@@ -147,14 +157,16 @@ export function FarmSatelliteHybrid({
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
           attribution: "NASA GIBS/MODIS",
-          maxZoom: 9,
-          minZoom: 1,
-          crossOrigin: "anonymous",
+        maxZoom: 9,
+        minZoom: 3,
+        opacity: selectedLayer === "hybrid" ? 0.35 : 0.62,
+        crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
         })
 
-        // Add layers in correct order
+        // Keep high-resolution imagery underneath NASA's regional observation layer.
+        esriImageryLayer.addTo(map)
         satelliteLayer.addTo(map)
         if (selectedLayer === "hybrid") {
           osmLayer.addTo(map)
@@ -249,6 +261,14 @@ export function FarmSatelliteHybrid({
         }
       })
 
+      // Restore the high-resolution imagery base after switching NASA layers.
+      const esriImageryLayer = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
+        maxZoom: 19,
+        minZoom: 3,
+        maxNativeZoom: 18,
+      }).addTo(mapRef.current)
+
       // Add new satellite layer
       const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
         attribution: "NASA GIBS/MODIS",
@@ -278,7 +298,7 @@ export function FarmSatelliteHybrid({
   const handleZoom = (direction: "in" | "out") => {
     if (!mapRef.current) return
     const newZoom = direction === "in" ? zoomLevel + 1 : zoomLevel - 1
-    if (newZoom >= 1 && newZoom <= 9) {
+    if (newZoom >= 3 && newZoom <= 19) {
       setZoomLevel(newZoom)
       mapRef.current.setZoom(newZoom)
     }
@@ -296,19 +316,30 @@ export function FarmSatelliteHybrid({
             </div>
             <div className="flex-1">
               <CardTitle>Farm Satellite Hybrid Imaging</CardTitle>
-              <CardDescription>NASA GIBS real-time satellite imagery of {fieldName}</CardDescription>
+              <CardDescription>High-resolution farm imagery with NASA MODIS crop signals for {fieldName}</CardDescription>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
-            disabled={loading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <a
+              href={`https://earth.google.com/web/@${latitude},${longitude},1200a,1800d,35y,0h,0t,0r`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Google Earth
+            </a>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
+              disabled={loading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -317,7 +348,7 @@ export function FarmSatelliteHybrid({
         <div className="flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
-            <span className="text-muted-foreground">NASA MODIS Satellite</span>
+            <span className="text-muted-foreground">Esri World Imagery + NASA MODIS</span>
           </div>
           {lastUpdated && <span className="text-muted-foreground">Updated: {lastUpdated}</span>}
         </div>
