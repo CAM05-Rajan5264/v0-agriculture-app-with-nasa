@@ -36,7 +36,7 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
 
   return (
     <section className="grid gap-4 xl:grid-cols-[1.35fr_1fr]" aria-labelledby="smart-farming-heading">
-      <div className="overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] via-card to-card p-5 shadow-sm md:p-6">
+      <div className="glossy-surface overflow-hidden rounded-2xl p-5 md:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -57,7 +57,7 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
           {actions.map((action) => {
             const Icon = action.icon
             return (
-              <Link key={action.title} href={action.href} className="group rounded-xl border border-border/70 bg-background/70 p-4 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+              <Link key={action.title} href={action.href} className="group rounded-xl border border-white/70 bg-white/55 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${action.tone}`}><Icon className="h-4 w-4" aria-hidden="true" /></div>
                 <h3 className="mt-3 text-sm font-semibold">{action.title}</h3>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{action.description}</p>
@@ -68,7 +68,7 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm md:p-6">
+      <div className="glossy-surface rounded-2xl p-5 md:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Farm readiness</p>

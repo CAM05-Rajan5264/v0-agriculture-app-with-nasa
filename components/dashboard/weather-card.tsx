@@ -11,7 +11,7 @@ interface WeatherCardProps {
 
 export function WeatherCard({ weather, locationName }: WeatherCardProps) {
   return (
-    <Card className="border-border bg-card">
+    <Card className="glossy-surface overflow-hidden border-white/70">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg text-foreground">
           <Sun className="h-5 w-5 text-amber-500" />
@@ -20,6 +20,11 @@ export function WeatherCard({ weather, locationName }: WeatherCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-5 grid grid-cols-1 gap-3 rounded-2xl border border-white/60 bg-white/45 p-3 sm:grid-cols-3">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Comfort index</p><p className="mt-1 text-xl font-bold text-primary">{Math.round(Math.max(0, 100 - Math.abs(weather.temperature - 24) * 3))}%</p><div className="mt-2 h-1.5 rounded-full bg-primary/10"><div className="h-full rounded-full bg-gradient-to-r from-primary/60 to-emerald-400" style={{ width: `${Math.round(Math.max(0, 100 - Math.abs(weather.temperature - 24) * 3))}%` }} /></div></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Rain outlook</p><p className="mt-1 text-xl font-bold text-sky-600">{weather.precipitation > 2 ? "Likely" : "Low"}</p><p className="mt-1 text-xs text-muted-foreground">Next field window</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Wind risk</p><p className="mt-1 text-xl font-bold text-amber-600">{weather.windSpeed > 7 ? "Watch" : "Calm"}</p><p className="mt-1 text-xs text-muted-foreground">Spray conditions</p></div>
+        </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
