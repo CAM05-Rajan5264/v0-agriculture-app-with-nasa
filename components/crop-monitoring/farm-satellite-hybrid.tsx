@@ -235,65 +235,7 @@ export function FarmSatelliteHybrid({
     }
 
     loadMapLibraries()
-  }, [latitude, longitude, fieldName, cropName])
-
-  // Update map layer when selection changes
-  useEffect(() => {
-    if (!mapRef.current) return
-
-    try {
-      const layer = satelliteLayers.find((l) => l.id === selectedLayer)
-      if (!layer) {
-        console.warn("[v0] Layer not found:", selectedLayer)
-        return
-      }
-
-      console.log("[v0] Switching to satellite layer:", {
-        id: layer.id,
-        name: layer.name,
-        tileUrl: layer.tileUrl,
-      })
-
-      // Remove all layers
-      mapRef.current.eachLayer((l: any) => {
-        if (l instanceof window.L.TileLayer) {
-          mapRef.current.removeLayer(l)
-        }
-      })
-
-      // Restore the high-resolution imagery base after switching NASA layers.
-      const esriImageryLayer = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
-        maxZoom: 19,
-        minZoom: 3,
-        maxNativeZoom: 18,
-      }).addTo(mapRef.current)
-
-      // Add new satellite layer
-      const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
-        attribution: "NASA GIBS/MODIS",
-        maxZoom: 19,
-        minZoom: 1,
-        crossOrigin: "anonymous",
-        subdomains: "abc",
-        tms: false,
-      }).addTo(mapRef.current)
-
-      // Add OSM layer if hybrid view
-      if (selectedLayer === "hybrid") {
-        const osmLayer = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 9,
-          minZoom: 1,
-          opacity: 0.3,
-        }).addTo(mapRef.current)
-      }
-
-      setLastUpdated(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }))
-    } catch (err) {
-      console.error("[v0] Layer switch error:", err)
-    }
-  }, [selectedLayer])
+  }, [latitude, longitude, fieldName, cropName, selectedLayer])
 
   const handleZoom = (direction: "in" | "out") => {
     if (!mapRef.current) return
