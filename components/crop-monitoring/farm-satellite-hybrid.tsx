@@ -24,8 +24,9 @@ export function FarmSatelliteHybrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedLayer, setSelectedLayer] = useState<string>("hybrid")
-  const [zoomLevel, setZoomLevel] = useState(13)
+  const [zoomLevel, setZoomLevel] = useState(9)
   const [lastUpdated, setLastUpdated] = useState<string>("")
+  const gibsDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   // NASA GIBS Satellite Layers for Hybrid View - Using correct WMTS REST API
   const satelliteLayers = [
@@ -33,35 +34,35 @@ export function FarmSatelliteHybrid({
       id: "hybrid",
       name: "Satellite Hybrid",
       description: "True color satellite + map overlay showing field boundaries",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: "openstreetmap",
     },
     {
       id: "true-color",
       name: "True Color (NASA MODIS)",
       description: "Natural color satellite imagery from NASA MODIS Terra satellite",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "vegetation",
       name: "Agriculture/Vegetation",
       description: "False color composite emphasizing healthy vegetation (green areas)",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "thermal",
       name: "Thermal/Temperature",
       description: "Infrared thermal data showing soil temperature and moisture stress",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_BrightnessTemp_Band31_Day/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_BrightnessTemp_Band31_Day/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: null,
     },
     {
       id: "aqua",
       name: "MODIS Aqua (Afternoon)",
       description: "Afternoon satellite pass showing afternoon vegetation conditions",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: null,
     },
   ]
@@ -125,7 +126,7 @@ export function FarmSatelliteHybrid({
         // Add base layer (OpenStreetMap for map overlay)
         const osmLayer = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
+          maxZoom: 9,
           minZoom: 1,
           opacity: selectedLayer === "hybrid" ? 0.3 : 0,
         })
@@ -144,9 +145,9 @@ export function FarmSatelliteHybrid({
           tileUrl: layer.tileUrl,
         })
 
-        const satelliteLayer = window.L.tileLayer(layer.tileUrl, {
+        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
           attribution: "NASA GIBS/MODIS",
-          maxZoom: 19,
+          maxZoom: 9,
           minZoom: 1,
           crossOrigin: "anonymous",
           subdomains: "abc",
@@ -249,7 +250,7 @@ export function FarmSatelliteHybrid({
       })
 
       // Add new satellite layer
-      const satelliteLayer = window.L.tileLayer(layer.tileUrl, {
+      const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
         attribution: "NASA GIBS/MODIS",
         maxZoom: 19,
         minZoom: 1,
@@ -262,7 +263,7 @@ export function FarmSatelliteHybrid({
       if (selectedLayer === "hybrid") {
         const osmLayer = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
+          maxZoom: 9,
           minZoom: 1,
           opacity: 0.3,
         }).addTo(mapRef.current)
@@ -277,7 +278,7 @@ export function FarmSatelliteHybrid({
   const handleZoom = (direction: "in" | "out") => {
     if (!mapRef.current) return
     const newZoom = direction === "in" ? zoomLevel + 1 : zoomLevel - 1
-    if (newZoom >= 1 && newZoom <= 19) {
+    if (newZoom >= 1 && newZoom <= 9) {
       setZoomLevel(newZoom)
       mapRef.current.setZoom(newZoom)
     }
