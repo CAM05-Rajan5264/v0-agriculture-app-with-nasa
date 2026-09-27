@@ -157,12 +157,13 @@ export function FarmSatelliteHybrid({
           tileUrl: layer.tileUrl,
         })
 
-        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
+        const satelliteLayer = window.L.tileLayer(`${layer.tileUrl.replace("__GIBS_DATE__", gibsDate)}?v=${imageryRefreshKey}`, {
           attribution: "NASA GIBS/MODIS",
-        maxZoom: 9,
-        minZoom: 3,
-        opacity: selectedLayer === "hybrid" ? 0.35 : 0.62,
-        crossOrigin: "anonymous",
+          maxZoom: 19,
+          minZoom: 3,
+          maxNativeZoom: 9,
+          opacity: selectedLayer === "hybrid" ? 0.42 : 1,
+          crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
         })
@@ -343,7 +344,7 @@ export function FarmSatelliteHybrid({
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={() => handleZoom("out")}
-                disabled={loading || zoomLevel <= 1}
+                disabled={loading || zoomLevel <= 3}
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
@@ -374,7 +375,13 @@ export function FarmSatelliteHybrid({
             {satelliteLayers.map((layer) => (
               <button
                 key={layer.id}
-                onClick={() => setSelectedLayer(layer.id)}
+                onClick={() => {
+                  if (selectedLayer !== layer.id) {
+                    setError(null)
+                    setLoading(true)
+                    setSelectedLayer(layer.id)
+                  }
+                }}
                 className={`relative rounded-lg border-2 p-3 text-left transition-all duration-200 ${
                   selectedLayer === layer.id
                     ? "border-primary bg-primary/5"
