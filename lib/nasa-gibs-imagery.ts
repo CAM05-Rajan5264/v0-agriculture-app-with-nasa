@@ -45,40 +45,40 @@ export function getNASASatelliteLayers(): SatelliteLayer[] {
       id: "true-color",
       name: "True Color Imagery",
       description: "Natural color satellite imagery - shows actual field conditions",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{date}/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       attribution: "NASA GIBS/MODIS Terra",
       minZoom: 1,
-      maxZoom: 19,
+      maxZoom: 9,
       dateFormat: "YYYYMMDD",
     },
     {
       id: "false-color-agriculture",
       name: "Agriculture/Vegetation",
       description: "False color composite highlighting vegetation and agricultural areas",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/{date}/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       attribution: "NASA GIBS/MODIS Terra",
       minZoom: 1,
-      maxZoom: 19,
+      maxZoom: 9,
       dateFormat: "YYYYMMDD",
     },
     {
       id: "ndvi-anomaly",
       name: "Vegetation Reflectance",
       description: "NASA MODIS false-color imagery for inspecting vegetation patterns; this is not a numeric NDVI layer.",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/{date}/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       attribution: "NASA GIBS/MODIS Terra",
       minZoom: 1,
-      maxZoom: 19,
+      maxZoom: 9,
       dateFormat: "YYYYMMDD",
     },
     {
       id: "thermal-anomaly",
       name: "Thermal Imagery",
       description: "Infrared thermal data - shows temperature variations and water stress",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_BrightnessTemp_Band31_Day/default/latest/GoogleMapsCompatible_Level{z}/{y}/{x}.jpg",
+      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_BrightnessTemp_Band31_Day/default/{date}/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       attribution: "NASA GIBS/MODIS Terra",
       minZoom: 1,
-      maxZoom: 19,
+      maxZoom: 9,
       dateFormat: "YYYYMMDD",
     },
   ]
@@ -157,8 +157,8 @@ export function buildSatelliteTileUrl(
   // Format date as YYYYMMDD for NASA GIBS
   const formattedDate = date.replace(/-/g, "")
 
-  // Replace date placeholder in URL
-  return layer.tileUrl.replace(/\d{8}(?=\/GoogleMapsCompatible)/, formattedDate)
+  // Replace the NASA GIBS date placeholder in the REST tile path.
+  return layer.tileUrl.replace("{date}", date).replace(/\d{8}(?=\/GoogleMapsCompatible)/, formattedDate)
 }
 
 /**
