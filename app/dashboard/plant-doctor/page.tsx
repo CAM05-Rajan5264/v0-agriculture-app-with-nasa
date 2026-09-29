@@ -19,6 +19,27 @@ export default function PlantDoctorPage() {
   const [error, setError] = useState("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
+  async function analyzeImage(imageData: string) {
+    if (!imageData || isAnalyzing) return
+    setIsAnalyzing(true)
+    setError("")
+    setDiagnosis(null)
+    try {
+      const response = await fetch("/api/plant-diagnosis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData, crop }),
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(payload.error || `Analysis failed (${response.status})`)
+      setDiagnosis(payload)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Analysis failed. Please try again.")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     setError("")
@@ -27,19 +48,18 @@ export default function PlantDoctorPage() {
     if (!file.type.startsWith("image/")) return setError("Choose a JPG, PNG, or WEBP image.")
     if (file.size > MAX_FILE_SIZE) return setError("Please use an image smaller than 6 MB.")
     const reader = new FileReader()
-    reader.onload = () => { setImage(String(reader.result)); setFileName(file.name) }
+    reader.onload = () => {
+      const imageData = String(reader.result)
+      setImage(imageData)
+      setFileName(file.name)
+      void analyzeImage(imageData)
+    }
+    reader.onerror = () => setError("The image could not be read. Please choose it again.")
     reader.readAsDataURL(file)
   }
 
-  async function analyze() {
-    if (!image || isAnalyzing) return
-    setIsAnalyzing(true); setError("")
-    try {
-      const response = await fetch("/api/plant-diagnosis", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image, crop }) })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload.error || "Analysis failed")
-      setDiagnosis(payload)
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Analysis failed. Please try again.") } finally { setIsAnalyzing(false) }
+  function analyze() {
+    void analyzeImage(image)
   }
 
   const severityLabel = diagnosis?.severity === "high" ? "Needs attention" : diagnosis?.severity === "moderate" ? "Monitor closely" : "Early signal"
@@ -54,7 +74,7 @@ export default function PlantDoctorPage() {
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <Card className="overflow-hidden border-white/70 bg-white/70 shadow-[0_18px_50px_oklch(0.45_0.08_160_/_0.12)] backdrop-blur-xl">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Camera className="text-primary" /> Upload a field photo</CardTitle><CardDescription>Use a close, well-lit photo of one affected leaf or crop area.</CardDescription></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Camera className="text-primary" /> Upload a field photo</CardTitle><CardDescription>Use a close, well-lit photo of one affected leaf or crop area. Analysis starts automatically after upload.</CardDescription></CardHeader>
             <CardContent className="flex flex-col gap-4">
               <label className="group relative flex min-h-72 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-primary/25 bg-primary/[0.04] p-6 text-center transition hover:border-primary/60 hover:bg-primary/[0.08]">
                 {image ? <img src={image} alt="Selected crop for analysis" className="absolute inset-0 size-full object-cover" /> : <><div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner"><UploadCloud /></div><p className="font-semibold">Drop a photo here or browse</p><p className="mt-1 text-sm text-muted-foreground">JPG, PNG, or WEBP · up to 6 MB</p></>}
