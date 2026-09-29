@@ -1,0 +1,36 @@
+import { openai } from "@ai-sdk/openai"
+import { generateText } from "ai"
+
+const systemPrompt = `You are FarmPulse Plant Doctor, a cautious crop-health assistant. Analyze the uploaded leaf or crop photo for visible signs of disease, pests, nutrient stress, or environmental damage. Return ONLY valid JSON with this shape: {"diagnosis":"string","confidence":number,"severity":"low"|"moderate"|"high","signs":["string"],"actions":["string"],"treatment":"string","followUp":"string"}. Never claim certainty from one image. If the photo is unclear or not a plant, say so and recommend another photo. Treatment must be conservative: prioritize isolation, sanitation, monitoring, and label-compliant products; recommend a local agronomist for high severity or uncertain cases.`
+
+export async function POST(request: Request) {
+  try {
+    const { image, crop } = await request.json()
+    if (typeof image !== "string" || !image.startsWith("data:image/")) {
+      return Response.json({ error: "Please upload a valid plant image." }, { status: 400 })
+    }
+    if (image.length > 8_000_000) {
+      return Response.json({ error: "Please use an image smaller than 6 MB." }, { status: 413 })
+    }
+
+    const result = await generateText({
+      model: openai("gpt-4o-mini"),
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: `Crop or plant (optional): ${typeof crop === "string" ? crop.slice(0, 80) : "Not provided"}. Analyze this image.` },
+          { type: "image", image },
+        ],
+      }],
+      temperature: 0.2,
+    })
+
+    const cleaned = result.text.trim().replace(/^```json\s*/, "").replace(/\s*```$/, "")
+    const diagnosis = JSON.parse(cleaned)
+    return Response.json(diagnosis, { headers: { "Cache-Control": "no-store" } })
+  } catch (error) {
+    console.error("[v0] Plant diagnosis failed", error)
+    return Response.json({ error: "Plant analysis is temporarily unavailable. Please try again with a clearer photo." }, { status: 502 })
+  }
+}
