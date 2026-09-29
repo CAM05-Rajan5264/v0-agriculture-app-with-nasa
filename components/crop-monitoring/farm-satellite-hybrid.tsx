@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, MapPin, Layers, ZoomIn, ZoomOut, RefreshCw, ExternalLink } from "lucide-react"
+import { AlertCircle, MapPin, Layers, ZoomIn, ZoomOut, RefreshCw } from "lucide-react"
 
 interface FarmSatelliteHybridProps {
   latitude: number
@@ -24,7 +24,7 @@ export function FarmSatelliteHybrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const selectedLayer = "true-color"
-  const [zoomLevel, setZoomLevel] = useState(14)
+  const [zoomLevel, setZoomLevel] = useState(9)
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
@@ -93,7 +93,7 @@ export function FarmSatelliteHybrid({
           center: [latitude, longitude],
           zoom: zoomLevel,
           minZoom: 3,
-          maxZoom: 19,
+          maxZoom: 9,
           zoomControl: false,
           attributionControl: true,
         })
@@ -115,9 +115,9 @@ export function FarmSatelliteHybrid({
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
           attribution: "NASA GIBS / MODIS Terra True Color",
-        maxZoom: 19,
-        minZoom: 3,
-        maxNativeZoom: 9,
+        maxZoom: 9,
+          minZoom: 3,
+          maxNativeZoom: 9,
         opacity: 1,
         crossOrigin: "anonymous",
           subdomains: "abc",
@@ -215,27 +215,16 @@ export function FarmSatelliteHybrid({
               <CardDescription>Latest available natural-color NASA MODIS pass for {fieldName}</CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <a
-              href={`https://earth.google.com/web/@${latitude},${longitude},1200a,1800d,35y,0h,0t,0r`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Google Earth
-            </a>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
-              disabled={loading}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => mapRef.current?.setView([latitude, longitude], zoomLevel)}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </CardHeader>
 
@@ -280,7 +269,7 @@ export function FarmSatelliteHybrid({
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={() => handleZoom("in")}
-                disabled={loading || zoomLevel >= 19}
+                disabled={loading || zoomLevel >= 9}
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
@@ -289,7 +278,7 @@ export function FarmSatelliteHybrid({
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={() => handleZoom("out")}
-                disabled={loading || zoomLevel <= 1}
+                disabled={loading || zoomLevel <= 3}
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
