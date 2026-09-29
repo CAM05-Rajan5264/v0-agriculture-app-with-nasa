@@ -101,7 +101,7 @@ export default function CropMonitoringPage() {
           <button
             key={f.id}
             onClick={() => setSelectedFieldId(f.id)}
-            className={`rounded-lg border-2 p-4 text-left transition-all ${
+            className={`glossy-surface rounded-2xl border-2 p-4 text-left transition-all hover:-translate-y-0.5 ${
               selectedFieldId === f.id
                 ? "border-primary bg-primary/5"
                 : "border-border bg-card hover:border-primary/50"
@@ -131,7 +131,7 @@ export default function CropMonitoringPage() {
       )}
 
       {loading ? (
-        <Card>
+        <Card className="glossy-surface overflow-hidden rounded-2xl">
           <CardContent className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary mx-auto" />
@@ -141,19 +141,19 @@ export default function CropMonitoringPage() {
         </Card>
       ) : monitoringData ? (
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="satellite">Satellite Imagery</TabsTrigger>
-            <TabsTrigger value="metrics">Detailed Metrics</TabsTrigger>
-            <TabsTrigger value="growth">Growth Stage</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts & Actions</TabsTrigger>
+          <TabsList className="glossy-surface grid h-auto w-full grid-cols-2 gap-2 rounded-2xl p-2 md:grid-cols-5">
+            <TabsTrigger className="rounded-xl py-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg" value="overview">Overview</TabsTrigger>
+            <TabsTrigger className="rounded-xl py-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg" value="satellite">Satellite Imagery</TabsTrigger>
+            <TabsTrigger className="rounded-xl py-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg" value="metrics">Detailed Metrics</TabsTrigger>
+            <TabsTrigger className="rounded-xl py-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg" value="growth">Growth Stage</TabsTrigger>
+            <TabsTrigger className="rounded-xl py-3 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg" value="alerts">Alerts & Actions</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* NDVI Card */}
-              <Card>
+              <Card className="glossy-surface overflow-hidden rounded-2xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">NDVI Index</CardTitle>
                 </CardHeader>
@@ -167,7 +167,7 @@ export default function CropMonitoringPage() {
               </Card>
 
               {/* EVI Card */}
-              <Card>
+              <Card className="glossy-surface overflow-hidden rounded-2xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">EVI Index</CardTitle>
                 </CardHeader>
@@ -181,7 +181,7 @@ export default function CropMonitoringPage() {
               </Card>
 
               {/* LAI Card */}
-              <Card>
+              <Card className="glossy-surface overflow-hidden rounded-2xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Leaf Area Index</CardTitle>
                 </CardHeader>
@@ -195,7 +195,7 @@ export default function CropMonitoringPage() {
               </Card>
 
               {/* Water Stress Card */}
-              <Card>
+              <Card className="glossy-surface overflow-hidden rounded-2xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Water Stress</CardTitle>
                 </CardHeader>
@@ -229,7 +229,7 @@ export default function CropMonitoringPage() {
 
           {/* Detailed Metrics Tab */}
           <TabsContent value="metrics" className="space-y-4">
-            <Card>
+            <Card className="glossy-surface overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle>Health Metrics</CardTitle>
                 <CardDescription>Detailed crop health indicators from NASA Earth observation</CardDescription>
@@ -307,7 +307,7 @@ export default function CropMonitoringPage() {
 
           {/* Growth Stage Tab */}
           <TabsContent value="growth" className="space-y-4">
-            <Card>
+            <Card className="glossy-surface overflow-hidden rounded-2xl">
               <CardHeader>
                 <CardTitle>Growth Stage & Development</CardTitle>
                 <CardDescription>Crop phenological stage based on NDVI and days since planting</CardDescription>
@@ -324,7 +324,7 @@ export default function CropMonitoringPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Card className="bg-muted/50">
+                  <Card className="glossy-surface border-white/70 bg-white/45">
                     <CardContent className="pt-6">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Days to Next Stage</p>
                       <p className="text-2xl font-bold text-foreground">{monitoringData.growthStage.daysToNextStage}</p>
@@ -332,7 +332,7 @@ export default function CropMonitoringPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-muted/50">
+                  <Card className="glossy-surface border-white/70 bg-white/45">
                     <CardContent className="pt-6">
                       <p className="text-xs font-medium text-muted-foreground mb-2">NDVI Range for Stage</p>
                       <p className="text-lg font-bold text-foreground">
@@ -342,7 +342,7 @@ export default function CropMonitoringPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-muted/50">
+                  <Card className="glossy-surface border-white/70 bg-white/45">
                     <CardContent className="pt-6">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Current NDVI</p>
                       <p className="text-lg font-bold text-foreground">{monitoringData.healthMetrics.ndvi.toFixed(2)}</p>
