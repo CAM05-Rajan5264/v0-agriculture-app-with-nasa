@@ -129,6 +129,15 @@ export function FarmSatelliteHybrid({
           fillOpacity: 0.8,
         }).addTo(map)
 
+        // Keep the farm nomenclature visible even when the popup is closed.
+        const locationLabel = window.L.divIcon({
+          className: "farm-location-label",
+          html: `<span>${fieldName}</span>`,
+          iconSize: [0, 0],
+          iconAnchor: [-14, 18],
+        })
+        window.L.marker([latitude, longitude], { icon: locationLabel, interactive: false, zIndexOffset: 1000 }).addTo(map)
+
         // Add popup to marker
         const popupContent = document.createElement("div")
         popupContent.className = "p-2"
