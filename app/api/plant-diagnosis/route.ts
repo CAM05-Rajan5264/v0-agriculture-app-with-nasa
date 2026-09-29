@@ -9,7 +9,8 @@ export async function POST(request: Request) {
     if (typeof image !== "string" || !image.startsWith("data:image/")) {
       return Response.json({ error: "Please upload a valid plant image." }, { status: 400 })
     }
-    if (image.length > 8_000_000) {
+    // A 6 MB binary image becomes roughly 8 MB after base64 encoding, plus the data URL prefix.
+    if (image.length > 10_000_000) {
       return Response.json({ error: "Please use an image smaller than 6 MB." }, { status: 413 })
     }
 
