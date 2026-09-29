@@ -23,46 +23,18 @@ export function FarmSatelliteHybrid({
   const mapRef = useRef<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedLayer, setSelectedLayer] = useState<string>("hybrid")
+  const selectedLayer = "true-color"
   const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
-  const gibsDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-  // NASA GIBS Satellite Layers for Hybrid View - Using correct WMTS REST API
+  // Single NASA GIBS MODIS Terra true-color layer using the latest available reliable pass.
   const satelliteLayers = [
-    {
-      id: "hybrid",
-      name: "Satellite Hybrid",
-      description: "True color satellite + map overlay showing field boundaries",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
-      overlay: "openstreetmap",
-    },
     {
       id: "true-color",
       name: "True Color (NASA MODIS)",
       description: "Natural color satellite imagery from NASA MODIS Terra satellite",
       tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
-      overlay: null,
-    },
-    {
-      id: "vegetation",
-      name: "Agriculture/Vegetation",
-      description: "False color composite emphasizing healthy vegetation (green areas)",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_Bands721/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
-      overlay: null,
-    },
-    {
-      id: "thermal",
-      name: "Thermal/Temperature",
-      description: "Infrared thermal data showing soil temperature and moisture stress",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_BrightnessTemp_Band31_Day/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
-      overlay: null,
-    },
-    {
-      id: "aqua",
-      name: "MODIS Aqua (Afternoon)",
-      description: "Afternoon satellite pass showing afternoon vegetation conditions",
-      tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
       overlay: null,
     },
   ]
@@ -126,20 +98,6 @@ export function FarmSatelliteHybrid({
           attributionControl: true,
         })
 
-        // Use a high-resolution imagery basemap for close farm inspection.
-        // NASA MODIS is valuable for regional crop signals, but its native pixels are not detailed enough for field-level zoom.
-        const esriImageryLayer = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-          attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
-          maxZoom: 19,
-          minZoom: 3,
-          maxNativeZoom: 18,
-        })
-        const osmLayer = window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-          minZoom: 3,
-          opacity: 0.35,
-        })
 
         // Add NASA GIBS satellite layer
         const layer = satelliteLayers.find((l) => l.id === selectedLayer)
@@ -156,21 +114,17 @@ export function FarmSatelliteHybrid({
         })
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
-          attribution: "NASA GIBS/MODIS",
-        maxZoom: 9,
+          attribution: "NASA GIBS / MODIS Terra True Color",
+        maxZoom: 19,
         minZoom: 3,
-        opacity: selectedLayer === "hybrid" ? 0.35 : 0.62,
+        maxNativeZoom: 9,
+        opacity: 1,
         crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
         })
 
-        // Keep high-resolution imagery underneath NASA's regional observation layer.
-        esriImageryLayer.addTo(map)
         satelliteLayer.addTo(map)
-        if (selectedLayer === "hybrid") {
-          osmLayer.addTo(map)
-        }
 
         // Add field location marker
         const fieldMarker = window.L.circleMarker([latitude, longitude], {
@@ -257,8 +211,8 @@ export function FarmSatelliteHybrid({
               <MapPin className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
-              <CardTitle>Farm Satellite Hybrid Imaging</CardTitle>
-              <CardDescription>High-resolution farm imagery with NASA MODIS crop signals for {fieldName}</CardDescription>
+              <CardTitle>NASA MODIS True Color Imaging</CardTitle>
+              <CardDescription>Latest available natural-color NASA MODIS pass for {fieldName}</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -288,9 +242,9 @@ export function FarmSatelliteHybrid({
       <CardContent className="space-y-4">
         {/* Status Bar */}
         <div className="flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-green-500"></div>
-            <span className="text-muted-foreground">Esri World Imagery + NASA MODIS</span>
+        <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-semibold text-foreground">NASA MODIS True Color</p>
           </div>
           {lastUpdated && <span className="text-muted-foreground">Updated: {lastUpdated}</span>}
         </div>
@@ -355,33 +309,6 @@ export function FarmSatelliteHybrid({
             </div>
           </div>
         )}
-
-        {/* Layer Selector */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-semibold text-foreground">Satellite Layers:</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {satelliteLayers.map((layer) => (
-              <button
-                key={layer.id}
-                onClick={() => setSelectedLayer(layer.id)}
-                className={`relative rounded-lg border-2 p-3 text-left transition-all duration-200 ${
-                  selectedLayer === layer.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-background hover:border-primary/50"
-                }`}
-              >
-                {selectedLayer === layer.id && (
-                  <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary"></div>
-                )}
-                <p className="text-sm font-medium text-foreground">{layer.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{layer.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Field Information */}
         <div className="rounded-lg bg-muted p-3 space-y-2 text-xs">
