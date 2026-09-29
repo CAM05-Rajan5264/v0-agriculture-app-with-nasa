@@ -24,7 +24,7 @@ export function FarmSatelliteHybrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const selectedLayer = "true-color"
-  const [zoomLevel, setZoomLevel] = useState(9)
+  const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
@@ -93,38 +93,31 @@ export function FarmSatelliteHybrid({
           center: [latitude, longitude],
           zoom: zoomLevel,
           minZoom: 3,
-          maxZoom: 9,
+          maxZoom: 19,
           zoomControl: false,
           attributionControl: true,
         })
 
+        const clearFarmBase = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Esri World Imagery; NASA MODIS overlay",
+          minZoom: 3,
+          maxZoom: 19,
+          maxNativeZoom: 18,
+        }).addTo(map)
 
-        // Add NASA GIBS satellite layer
         const layer = satelliteLayers.find((l) => l.id === selectedLayer)
-        if (!layer) {
-          setError("Selected layer not found")
-          setLoading(false)
-          return
-        }
-
-        console.log("[v0] Loading satellite layer:", {
-          id: layer.id,
-          name: layer.name,
-          tileUrl: layer.tileUrl,
-        })
+        if (!layer) throw new Error("Selected satellite layer not found")
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
           attribution: "NASA GIBS / MODIS Terra True Color",
-        maxZoom: 9,
+          maxZoom: 19,
           minZoom: 3,
           maxNativeZoom: 9,
-        opacity: 1,
-        crossOrigin: "anonymous",
+          opacity: 0.18,
+          crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
-        })
-
-        satelliteLayer.addTo(map)
+        }).addTo(map)
 
         // Add field location marker
         const fieldMarker = window.L.circleMarker([latitude, longitude], {
