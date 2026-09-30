@@ -47,12 +47,24 @@ export default function PlantDoctorPage() {
     if (!file) return
     if (!file.type.startsWith("image/")) return setError("Choose a JPG, PNG, or WEBP image.")
     if (file.size > MAX_FILE_SIZE) return setError("Please use an image smaller than 6 MB.")
+
     const reader = new FileReader()
     reader.onload = () => {
-      const imageData = String(reader.result)
-      setImage(imageData)
-      setFileName(file.name)
-      void analyzeImage(imageData)
+      const source = String(reader.result)
+      const preview = new Image()
+      preview.onload = () => {
+        const scale = Math.min(1, 1600 / Math.max(preview.naturalWidth, preview.naturalHeight))
+        const canvas = document.createElement("canvas")
+        canvas.width = Math.max(1, Math.round(preview.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(preview.naturalHeight * scale))
+        canvas.getContext("2d")?.drawImage(preview, 0, 0, canvas.width, canvas.height)
+        const imageData = canvas.toDataURL("image/jpeg", 0.86)
+        setImage(imageData)
+        setFileName(file.name)
+        void analyzeImage(imageData)
+      }
+      preview.onerror = () => setError("This image format could not be decoded. Choose a JPG, PNG, or WEBP photo.")
+      preview.src = source
     }
     reader.onerror = () => setError("The image could not be read. Please choose it again.")
     reader.readAsDataURL(file)
