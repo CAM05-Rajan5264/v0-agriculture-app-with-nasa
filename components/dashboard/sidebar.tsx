@@ -19,7 +19,6 @@ import {
   Code,
   Activity,
   Leaf,
-  Radar,
   GraduationCap,
   MessageCircle,
 } from "lucide-react"
@@ -29,7 +28,6 @@ const navigation = [
   { name: "My Farms", href: "/dashboard/farms", icon: MapPin },
   { name: "Crops", href: "/dashboard/crops", icon: Sprout },
   { name: "Crop Monitoring", href: "/dashboard/crop-monitoring", icon: Leaf },
-  { name: "Farm Intelligence", href: "/dashboard/farm-intelligence", icon: Radar },
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
