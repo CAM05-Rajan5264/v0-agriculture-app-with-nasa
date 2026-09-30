@@ -3,6 +3,8 @@ import { generateText } from "ai"
 
 const systemPrompt = `You are FarmPulse Plant Doctor, a cautious crop-health assistant. Analyze the uploaded leaf or crop photo for visible signs of disease, pests, nutrient stress, or environmental damage. Return ONLY valid JSON with this shape: {"diagnosis":"string","confidence":number,"severity":"low"|"moderate"|"high","signs":["string"],"actions":["string"],"treatment":"string","followUp":"string"}. Never claim certainty from one image. If the photo is unclear or not a plant, say so and recommend another photo. Treatment must be conservative: prioritize isolation, sanitation, monitoring, and label-compliant products; recommend a local agronomist for high severity or uncertain cases.`
 
+export const maxDuration = 60
+
 export async function POST(request: Request) {
   try {
     const { image, crop } = await request.json()
@@ -27,8 +29,16 @@ export async function POST(request: Request) {
       temperature: 0.2,
     })
 
-    const cleaned = result.text.trim().replace(/^```json\s*/, "").replace(/\s*```$/, "")
-    const diagnosis = JSON.parse(cleaned)
+    const cleaned = result.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "")
+    const jsonStart = cleaned.indexOf("{")
+    const jsonEnd = cleaned.lastIndexOf("}")
+    if (jsonStart < 0 || jsonEnd <= jsonStart) {
+      throw new Error("The vision model returned an invalid diagnosis format")
+    }
+    const diagnosis = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1))
+    if (typeof diagnosis.diagnosis !== "string" || !Array.isArray(diagnosis.signs) || !Array.isArray(diagnosis.actions)) {
+      throw new Error("The diagnosis response was incomplete")
+    }
     return Response.json(diagnosis, { headers: { "Cache-Control": "no-store" } })
   } catch (error) {
     console.error("[v0] Plant diagnosis failed", error)
