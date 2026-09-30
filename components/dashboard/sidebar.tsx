@@ -21,7 +21,6 @@ import {
   Leaf,
   GraduationCap,
   MessageCircle,
-  Stethoscope,
 } from "lucide-react"
 
 const navigation = [
@@ -34,7 +33,6 @@ const navigation = [
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
-  { name: "Plant Doctor", href: "/dashboard/plant-doctor", icon: Stethoscope },
   { name: "Farm Assistant", href: "/dashboard/farm-assistant", icon: MessageCircle },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
