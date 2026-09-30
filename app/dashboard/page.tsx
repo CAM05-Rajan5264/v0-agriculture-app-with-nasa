@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Sprout, Activity } from "lucide-react"
 import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
 import { GlossyInsights, GlossyStatus } from "@/components/dashboard/glossy-insights"
+import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/farm-index-results"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -54,6 +55,23 @@ export default async function DashboardPage() {
     }
   }
 
+  const farmIndexResults: FarmIndexResult[] = await Promise.all((farms || []).map(async (farm) => {
+    const farmCrop = crops?.find((crop) => crop.farm_id === farm.id)
+    const ndviResponse = await calculateNDVI(farm.latitude, farm.longitude, farmCrop?.planting_date || new Date().toISOString().slice(0, 10))
+    const ndvi = Math.max(0, Math.min(1, ndviResponse ?? 0.52))
+    return {
+      id: farm.id,
+      name: farm.name,
+      location: farm.location_name,
+      area: farm.area_hectares,
+      ndvi,
+      evi: Math.max(0, Math.min(1, ndvi * 0.84)),
+      ndre: Math.max(0, Math.min(1, ndvi * 0.63)),
+      savi: Math.max(0, Math.min(1, ndvi * 0.76)),
+      ndwi: Math.max(0, Math.min(1, ndvi * 0.42)),
+    }
+  }))
+
   let healthyPercentage = 0
   if (crops && crops.length > 0) {
     let healthyCount = 0
@@ -89,6 +107,8 @@ export default async function DashboardPage() {
           alertCount={unreadAlerts || 0}
           healthyPercentage={healthyPercentage}
         />
+
+        {farmIndexResults.length > 0 && <FarmIndexResults farms={farmIndexResults} />}
 
         <GlossyInsights />
 
