@@ -4,6 +4,7 @@ import { Header } from "@/components/dashboard/header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { IndexResultsChart } from "@/components/dashboard/index-results-chart"
 import { Activity, ArrowRight, CloudSun, Droplets, Gauge, Leaf, Map, Radar, ShieldCheck, Sprout, TrendingUp, Wind } from "lucide-react"
 
 const indicators = [
@@ -55,6 +56,8 @@ export default async function FarmIntelligencePage() {
             </Card>
           ))}
         </section>
+
+        <IndexResultsChart />
 
         <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
           <Card className="glossy-surface overflow-hidden rounded-3xl border-white/70">
