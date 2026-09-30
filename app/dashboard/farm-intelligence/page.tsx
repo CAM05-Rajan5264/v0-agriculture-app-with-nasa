@@ -5,14 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { IndexResultsChart } from "@/components/dashboard/index-results-chart"
-import { Activity, ArrowRight, CloudSun, Droplets, Gauge, Leaf, Map, Radar, ShieldCheck, Sprout, TrendingUp, Wind } from "lucide-react"
-
-const indicators = [
-  { label: "Vegetation health", value: "0.74", detail: "NDVI average", icon: Leaf, tone: "text-emerald-700", bar: "74%" },
-  { label: "Water stress", value: "Low", detail: "NDWI signal", icon: Droplets, tone: "text-sky-700", bar: "28%" },
-  { label: "Field coverage", value: "92%", detail: "Satellite analyzed", icon: Radar, tone: "text-violet-700", bar: "92%" },
-  { label: "Carbon intensity", value: "1.8 t", detail: "CO₂e / hectare", icon: Gauge, tone: "text-amber-700", bar: "42%" },
-]
+import { FarmIntelligenceSelector } from "@/components/dashboard/farm-intelligence-selector"
+import { ArrowRight, CloudSun, Droplets, Map, ShieldCheck, Sprout } from "lucide-react"
 
 export default async function FarmIntelligencePage() {
   const supabase = await createClient()
@@ -49,13 +43,7 @@ export default async function FarmIntelligencePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {indicators.map((item) => (
-            <Card key={item.label} className="glossy-surface overflow-hidden rounded-2xl border-white/70">
-              <CardContent className="p-5"><div className="flex items-start justify-between"><div className={`flex size-11 items-center justify-center rounded-2xl bg-white/70 ${item.tone}`}><item.icon className="size-5" /></div><TrendingUp className="size-4 text-primary/50" /></div><p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{item.label}</p><p className="mt-1 text-2xl font-semibold text-foreground">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p><div className="mt-4 h-1.5 rounded-full bg-primary/10"><div className="h-full rounded-full bg-gradient-to-r from-primary via-emerald-500 to-lime-400" style={{ width: item.bar }} /></div></CardContent>
-            </Card>
-          ))}
-        </section>
+        {farms?.length ? <FarmIntelligenceSelector farms={farms} /> : <Card className="glossy-surface rounded-3xl border-white/70"><CardContent className="p-6 text-sm text-muted-foreground">Add a farm to activate farm-specific intelligence.</CardContent></Card>}
 
         <IndexResultsChart />
 
