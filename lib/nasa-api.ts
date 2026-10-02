@@ -404,14 +404,59 @@ function calculateET(temp: number, humidity: number, windSpeed: number, solarRad
   return Math.max(0, ET)
 }
 
+const NASA_GIBS_WMS = "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi"
+
+async function getNASAIndex(latitude: number, longitude: number, layer: string, date: string): Promise<number | null> {
+  const delta = 0.01
+  const params = new URLSearchParams({
+    service: "WMS",
+    request: "GetFeatureInfo",
+    version: "1.3.0",
+    layers: layer,
+    query_layers: layer,
+    styles: "",
+    crs: "EPSG:4326",
+    bbox: `${latitude - delta},${longitude - delta},${latitude + delta},${longitude + delta}`,
+    width: "101",
+    height: "101",
+    i: "50",
+    j: "50",
+    info_format: "text/plain",
+    time: date,
+  })
+  const response = await fetch(`${NASA_GIBS_WMS}?${params}`, { next: { revalidate: 3600 } })
+  if (!response.ok) return null
+  const text = await response.text()
+  const match = text.match(/(?:value|index|pixel)[^\\d-]*(-?\\d+(?:\\.\\d+)?)/i) || text.match(/(-?\\d+(?:\\.\\d+)?)/)
+  const raw = match ? Number(match[1]) : NaN
+  if (!Number.isFinite(raw)) return null
+  // MODIS vegetation products commonly expose scaled integer values.
+  const value = Math.abs(raw) > 1 ? raw * 0.0001 : raw
+  return value >= -1 && value <= 1 ? Number(value.toFixed(3)) : null
+}
+
+export async function calculateNASAIndices(latitude: number, longitude: number, date = new Date().toISOString().slice(0, 10)) {
+  const layers = {
+    ndvi: "MODIS_Terra_16Day_250m_Vegetation_Indices_NDVI",
+    evi: "MODIS_Terra_16Day_250m_Vegetation_Indices_EVI",
+  }
+  const [ndvi, evi] = await Promise.all([
+    getNASAIndex(latitude, longitude, layers.ndvi.replace(" ", ""), date),
+    getNASAIndex(latitude, longitude, layers.evi.replace(" ", ""), date),
+  ])
+  if (ndvi === null && evi === null) return null
+  return {
+    ndvi,
+    evi,
+    ndre: null,
+    savi: null,
+    ndwi: null,
+  }
+}
+
 export async function calculateNDVI(latitude: number, longitude: number, plantingDate: string): Promise<number | null> {
-  // NDVI should come from NASA satellite data (MODIS, Landsat)
-  // For now, return null to indicate real satellite data unavailable
-  // In production, integrate with MODIS or Landsat Level 2 products
-  
-  console.warn("[v0] NDVI requires NASA MODIS or Landsat satellite data - not available from weather API alone")
-  
-  return null
+  const indices = await calculateNASAIndices(latitude, longitude)
+  return indices?.ndvi ?? null
 }
 
 export function analyzeCropHealth(ndvi: number | null): CropHealthAnalysis {
