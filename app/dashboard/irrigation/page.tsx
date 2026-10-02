@@ -4,7 +4,8 @@ import { IrrigationCard } from "@/components/dashboard/irrigation-card"
 import { LogIrrigationDialog } from "@/components/irrigation/log-irrigation-dialog"
 import { IrrigationHistory } from "@/components/irrigation/irrigation-history"
 import { NextIrrigationCard } from "@/components/irrigation/next-irrigation-card"
-import { getIrrigationStatus, getCropHealth } from "@/lib/nasa-api"
+import { getIrrigationStatus, getCropHealth, getSoilMoistureTrends } from "@/lib/nasa-api"
+import { SoilMoistureTrends } from "@/components/dashboard/soil-moisture-trends"
 import { calculateNextIrrigation } from "@/lib/irrigation-calculator"
 import { Droplets, Sprout, Gauge, CloudRain, Timer } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +45,7 @@ export default async function IrrigationPage() {
     (crops || []).map(async (crop) => {
       const irrigation = await getIrrigationStatus(crop.farms.latitude, crop.farms.longitude, crop.name)
       const cropHealth = await getCropHealth(crop.farms.latitude, crop.farms.longitude)
+      const soilMoisture = await getSoilMoistureTrends(crop.farms.latitude, crop.farms.longitude)
       const events = eventsByCrop[crop.id] || []
       const lastEvent = events[0] || null
 
@@ -54,7 +56,8 @@ export default async function IrrigationPage() {
         irrigation,
         cropHealth,
         prediction,
-        events: events.slice(0, 5), // Last 5 events
+        events: events.slice(0, 5),
+        soilMoisture,
       }
     }),
   )
@@ -67,7 +70,7 @@ export default async function IrrigationPage() {
 
         {crops && crops.length > 0 ? (
           <div className="space-y-8">
-            {irrigationData.map(({ crop, irrigation, prediction, events }) => (
+            {irrigationData.map(({ crop, irrigation, prediction, events, soilMoisture }) => (
               <div key={crop.id} className="space-y-4">
                 {/* Crop Header */}
                 <div className="flex items-center justify-between">
@@ -86,6 +89,7 @@ export default async function IrrigationPage() {
                 </div>
 
                 {/* Cards Grid */}
+                <div className="mb-4">{soilMoisture.length > 0 ? <SoilMoistureTrends farmName={crop.farms.name} points={soilMoisture} /> : <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">NASA POWER soil moisture data is unavailable for this farm.</div>}</div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {/* Current Status */}
                   <IrrigationCard irrigation={irrigation} farmName={`${crop.name} at ${crop.farms.name}`} />
