@@ -6,7 +6,8 @@ import { IrrigationHistory } from "@/components/irrigation/irrigation-history"
 import { NextIrrigationCard } from "@/components/irrigation/next-irrigation-card"
 import { getIrrigationStatus, getCropHealth } from "@/lib/nasa-api"
 import { calculateNextIrrigation } from "@/lib/irrigation-calculator"
-import { Droplets, Sprout } from "lucide-react"
+import { Droplets, Sprout, Gauge, CloudRain, Timer } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import type { IrrigationEvent } from "@/lib/types"
@@ -61,13 +62,8 @@ export default async function IrrigationPage() {
   return (
     <div className="flex flex-col">
       <Header title="Irrigation" unreadAlerts={unreadAlerts || 0} />
-      <div className="p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-foreground">Irrigation Management</h2>
-          <p className="text-muted-foreground">
-            Track irrigation events and get smart recommendations based on soil moisture, weather, and crop health
-          </p>
-        </div>
+      <div className="p-4 md:p-6">
+        <div className="glossy-surface mb-6 overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Water intelligence</Badge><h2 className="text-3xl font-bold tracking-tight text-foreground">Irrigation Management</h2><p className="mt-1 max-w-2xl text-muted-foreground">Turn NASA weather, soil moisture, and crop health into clear watering decisions.</p></div><div className="rounded-2xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary"><Droplets className="mr-2 inline size-4" />{crops?.length || 0} crops monitored</div></div><div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3"><div className="rounded-2xl bg-white/55 p-4"><Gauge className="size-4 text-primary" /><p className="mt-3 text-2xl font-bold">{irrigationData.filter(({ irrigation }) => irrigation.soilMoisture < 40).length}</p><p className="text-xs text-muted-foreground">Needs attention</p></div><div className="rounded-2xl bg-white/55 p-4"><Timer className="size-4 text-amber-600" /><p className="mt-3 text-2xl font-bold">{irrigationData.filter(({ prediction }) => prediction.shouldIrrigate).length}</p><p className="text-xs text-muted-foreground">Recommended now</p></div><div className="hidden rounded-2xl bg-white/55 p-4 md:block"><CloudRain className="size-4 text-sky-600" /><p className="mt-3 text-2xl font-bold">NASA</p><p className="text-xs text-muted-foreground">Weather source</p></div></div></div>
 
         {crops && crops.length > 0 ? (
           <div className="space-y-8">
