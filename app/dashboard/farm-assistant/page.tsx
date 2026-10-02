@@ -1,7 +1,8 @@
 "use client"
 
 import { FormEvent, useState } from "react"
-import { Bot, Loader2, Send, Sprout, User } from "lucide-react"
+import { Bot, Loader2, Send, Sprout, User, Sparkles, ShieldCheck } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -63,11 +64,7 @@ export default function FarmAssistantPage() {
   return (
     <div className="min-h-full bg-muted/30 px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <header>
-          <p className="text-sm font-medium text-primary">FarmPulse Assistant</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Your on-demand farming guide</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">Get short, practical guidance for crops, soil, irrigation, and sustainable farm decisions.</p>
-        </header>
+        <header className="glossy-surface overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Decision support</Badge><p className="flex items-center gap-2 text-sm font-medium text-primary"><Sparkles className="size-4" /> FarmPulse Assistant</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Your on-demand farming guide</h1><p className="mt-2 max-w-2xl text-muted-foreground">Get short, practical guidance for crops, soil, irrigation, and sustainable farm decisions.</p></div><div className="rounded-2xl bg-primary/10 p-4 text-primary"><ShieldCheck className="size-7" /></div></div></header>
 
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-background">

@@ -6,7 +6,8 @@ import type { Crop, Farm, FarmingActivity } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Sprout, Bug, Leaf, Wrench } from "lucide-react"
+import { Plus, Sprout, Bug, Leaf, Wrench, CalendarDays, Activity, TrendingUp } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { AddActivityDialog } from "@/components/activities/add-activity-dialog"
 import { ActivityList } from "@/components/activities/activity-list"
 
@@ -68,18 +69,8 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Farming Activities</h1>
-          <p className="text-muted-foreground mt-2">Record and track all your farming activities</p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Log Activity
-        </Button>
-      </div>
-
+    <div className="flex flex-col gap-6 p-4 md:p-6">
+      <div className="glossy-surface overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Field operations</Badge><h1 className="text-3xl font-bold tracking-tight">Farming Activities</h1><p className="mt-2 text-muted-foreground">Record, review, and keep every field action moving.</p></div><Button onClick={() => setDialogOpen(true)} className="gap-2"><Plus className="size-4" />Log Activity</Button></div><div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"><div className="rounded-2xl bg-white/55 p-4"><Activity className="size-4 text-primary" /><p className="mt-3 text-2xl font-bold">{activities.length}</p><p className="text-xs text-muted-foreground">Total actions</p></div><div className="rounded-2xl bg-white/55 p-4"><CalendarDays className="size-4 text-sky-600" /><p className="mt-3 text-2xl font-bold">{new Set(activities.map((a) => a.activity_date)).size}</p><p className="text-xs text-muted-foreground">Active days</p></div><div className="rounded-2xl bg-white/55 p-4"><TrendingUp className="size-4 text-emerald-600" /><p className="mt-3 text-2xl font-bold">{activityStats.harvest}</p><p className="text-xs text-muted-foreground">Harvests</p></div><div className="rounded-2xl bg-white/55 p-4"><Leaf className="size-4 text-amber-600" /><p className="mt-3 text-2xl font-bold">{farms.length}</p><p className="text-xs text-muted-foreground">Farms covered</p></div></div></div>
       <AddActivityDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
