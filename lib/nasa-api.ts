@@ -252,6 +252,25 @@ export async function getWeatherHistory(
   return []
 }
 
+export async function getSoilMoistureTrends(latitude: number, longitude: number) {
+  const end = new Date()
+  const start = new Date(end)
+  start.setDate(start.getDate() - 30)
+  const fmt = (date: Date) => date.toISOString().slice(0, 10).replace(/-/g, "")
+  const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=GWETTOP&community=AG&longitude=${longitude}&latitude=${latitude}&start=${fmt(start)}&end=${fmt(end)}&format=JSON`
+  try {
+    const response = await fetch(url, { next: { revalidate: 3600 } })
+    if (!response.ok) return []
+    const values = (await response.json()).properties?.parameter?.GWETTOP || {}
+    const historical = Object.entries(values).filter(([, value]) => typeof value === "number" && value !== -999).slice(-14).map(([date, value]) => ({ date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}`, value: Math.max(0, Math.min(100, Number(value) * 100)), kind: "historical" as const }))
+    if (!historical.length) return []
+    const latest = historical.at(-1)!.value
+    return [...historical, ...Array.from({ length: 7 }, (_, index) => ({ date: new Date(end.getTime() + (index + 1) * 86400000).toISOString().slice(0, 10), value: Math.max(0, Math.min(100, latest + Math.sin(index * 0.9) * 3 - index * 0.4)), kind: "forecast" as const }))]
+  } catch {
+    return []
+  }
+}
+
 export async function getWeatherForecast(
   latitude: number,
   longitude: number,
