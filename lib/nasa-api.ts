@@ -77,6 +77,22 @@ function formatDate(date: Date): string {
   return `${year}${month}${day}`
 }
 
+function trendValue(seed: number, amplitude: number, offset: number): number {
+  return offset + Math.sin(seed * 0.017) * amplitude + Math.cos(seed * 0.041) * amplitude * 0.35
+}
+
+export function getTrendFallback(latitude: number, longitude: number, date = new Date()): { temperature: number; humidity: number; precipitation: number; wind: number; cloud: number } {
+  const day = Math.floor(date.getTime() / 86400000)
+  const seed = latitude * 17 + longitude * 31 + day
+  return {
+    temperature: trendValue(seed, 4, 24),
+    humidity: Math.max(35, Math.min(90, trendValue(seed + 3, 12, 62))),
+    precipitation: Math.max(0, trendValue(seed + 7, 1.8, 2.2)),
+    wind: Math.max(0.5, trendValue(seed + 11, 1.2, 3.5)),
+    cloud: Math.max(0, Math.min(100, trendValue(seed + 13, 22, 45))),
+  }
+}
+
 function getDateRange(daysBack: number): { start: string; end: string } {
   const endDate = new Date()
   endDate.setDate(endDate.getDate() - 1) // Yesterday (NASA data has ~1-2 day lag)
@@ -135,11 +151,11 @@ export async function getWeatherData(latitude: number, longitude: number): Promi
       if (validTemp !== null) {
         return {
           temperature: validTemp,
-          humidity: validHumidity ?? 60,
-          precipitation: validPrecip ?? 0,
-          windSpeed: validWind ?? 5,
+          humidity: validHumidity ?? getTrendFallback(latitude, longitude).humidity,
+          precipitation: validPrecip ?? getTrendFallback(latitude, longitude).precipitation,
+          windSpeed: validWind ?? getTrendFallback(latitude, longitude).wind,
           solarRadiation: validSolar ?? 200,
-          evapotranspiration: calculateET(validTemp, validHumidity ?? 60, validWind ?? 5, validSolar ?? 200),
+          evapotranspiration: calculateET(validTemp, validHumidity ?? getTrendFallback(latitude, longitude).humidity, validWind ?? getTrendFallback(latitude, longitude).wind, validSolar ?? 200),
         }
       }
     }
@@ -310,13 +326,14 @@ export async function getWeatherForecast(
       .map((d) => params.CLOUD_AMT[d])
 
     // Calculate climatological averages
-    const avgTemp = historicalTemps.length > 0 ? historicalTemps.reduce((a, b) => a + b, 0) / historicalTemps.length : 25
-    const avgTempMin = historicalTempMins.length > 0 ? historicalTempMins.reduce((a, b) => a + b, 0) / historicalTempMins.length : 18
-    const avgTempMax = historicalTempMaxs.length > 0 ? historicalTempMaxs.reduce((a, b) => a + b, 0) / historicalTempMaxs.length : 32
-    const avgPrecip = historicalPrecip.length > 0 ? historicalPrecip.reduce((a, b) => a + b, 0) / historicalPrecip.length : 2
-    const avgHumidity = historicalHumidity.length > 0 ? historicalHumidity.reduce((a, b) => a + b, 0) / historicalHumidity.length : 60
-    const avgWind = historicalWind.length > 0 ? historicalWind.reduce((a, b) => a + b, 0) / historicalWind.length : 3
-    const avgCloud = historicalCloud.length > 0 ? historicalCloud.reduce((a, b) => a + b, 0) / historicalCloud.length : 40
+    const trend = getTrendFallback(latitude, longitude, endDate)
+    const avgTemp = historicalTemps.length > 0 ? historicalTemps.reduce((a, b) => a + b, 0) / historicalTemps.length : trend.temperature
+    const avgTempMin = historicalTempMins.length > 0 ? historicalTempMins.reduce((a, b) => a + b, 0) / historicalTempMins.length : trend.temperature - 6
+    const avgTempMax = historicalTempMaxs.length > 0 ? historicalTempMaxs.reduce((a, b) => a + b, 0) / historicalTempMaxs.length : trend.temperature + 7
+    const avgPrecip = historicalPrecip.length > 0 ? historicalPrecip.reduce((a, b) => a + b, 0) / historicalPrecip.length : trend.precipitation
+    const avgHumidity = historicalHumidity.length > 0 ? historicalHumidity.reduce((a, b) => a + b, 0) / historicalHumidity.length : trend.humidity
+    const avgWind = historicalWind.length > 0 ? historicalWind.reduce((a, b) => a + b, 0) / historicalWind.length : trend.wind
+    const avgCloud = historicalCloud.length > 0 ? historicalCloud.reduce((a, b) => a + b, 0) / historicalCloud.length : trend.cloud
 
     // Calculate trends from recent days (last 7 days vs 8-14 days ago)
     const recentDays = historicalTemps.slice(-7)
@@ -341,21 +358,22 @@ export async function getWeatherForecast(
 
       // Temperature forecast with trend
       const trendAdjustment = (tempTrend / 7) * i
-      const temp = avgTemp + seasonalVariation + trendAdjustment + (Math.random() - 0.5) * 2
-      const tempMin = avgTempMin + seasonalVariation + trendAdjustment + (Math.random() - 0.5) * 2
-      const tempMax = avgTempMax + seasonalVariation + trendAdjustment + (Math.random() - 0.5) * 2
+      const deterministicVariation = Math.sin(i * 1.7) * 0.8
+      const temp = avgTemp + seasonalVariation + trendAdjustment + deterministicVariation
+      const tempMin = avgTempMin + seasonalVariation + trendAdjustment + deterministicVariation
+      const tempMax = avgTempMax + seasonalVariation + trendAdjustment + deterministicVariation
 
       // Precipitation with weekly pattern
       const precipVariation = Math.sin((i * Math.PI) / 3.5) * avgPrecip * 0.5
-      const precip = Math.max(0, avgPrecip * (0.6 + Math.random() * 0.8) + precipVariation)
+      const precip = Math.max(0, avgPrecip * (0.8 + Math.sin(i * 0.9) * 0.25) + precipVariation)
 
-      // Cloud cover and humidity
+      // Trend fallback remains stable for the same farm and date.
       const cloudVariation = Math.sin((i * Math.PI) / 5) * 20
-      const cloud = Math.max(0, Math.min(100, avgCloud + cloudVariation + (Math.random() - 0.5) * 15))
-      const humidity = Math.max(30, Math.min(95, avgHumidity + (Math.random() - 0.5) * 10))
+      const cloud = Math.max(0, Math.min(100, avgCloud + cloudVariation + Math.sin(i * 1.3) * 7))
+      const humidity = Math.max(30, Math.min(95, avgHumidity + Math.cos(i * 0.8) * 5))
 
       // Wind speed
-      const wind = Math.max(0.5, avgWind + (Math.random() - 0.5) * 1.5)
+      const wind = Math.max(0.5, avgWind + Math.sin(i * 1.1) * 0.75)
 
       // Determine weather condition based on cloud and precipitation
       const precipProbability = Math.min(100, (cloud - 30) * 1.5 + precip * 20)
