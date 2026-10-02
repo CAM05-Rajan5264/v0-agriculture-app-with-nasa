@@ -7,11 +7,11 @@ export interface FarmIndexResult {
   name: string
   location: string
   area: number | null
-  ndvi: number
-  evi: number
-  ndre: number
-  savi: number
-  ndwi: number
+  ndvi: number | null
+  evi: number | null
+  ndre: number | null
+  savi: number | null
+  ndwi: number | null
 }
 
 const indexMeta = [
@@ -22,13 +22,13 @@ const indexMeta = [
   { key: "ndwi", label: "NDWI", description: "Canopy water", icon: Droplets, color: "from-sky-500 to-cyan-300" },
 ] as const
 
-function IndexCard({ label, description, value, color, icon: Icon }: { label: string; description: string; value: number; color: string; icon: typeof Leaf }) {
-  const percentage = Math.max(8, Math.min(100, Math.round(value * 100)))
+function IndexCard({ label, description, value, color, icon: Icon }: { label: string; description: string; value: number | null; color: string; icon: typeof Leaf }) {
+  const percentage = value === null ? 0 : Math.max(8, Math.min(100, Math.round(value * 100)))
   return (
     <div className="rounded-2xl border border-white/70 bg-white/45 p-4 shadow-sm backdrop-blur-md transition-transform hover:-translate-y-0.5">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2"><Icon className="size-4 text-primary" /><span className="text-xs font-bold tracking-wide">{label}</span></div>
-        <span className="text-lg font-bold text-foreground">{value.toFixed(2)}</span>
+        <span className="text-lg font-bold text-foreground">{value === null ? "Unavailable" : value.toFixed(2)}</span>
       </div>
       <p className="mt-1 text-[11px] text-muted-foreground">{description}</p>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-primary/10"><div className={`h-full rounded-full bg-gradient-to-r ${color}`} style={{ width: `${percentage}%` }} /></div>

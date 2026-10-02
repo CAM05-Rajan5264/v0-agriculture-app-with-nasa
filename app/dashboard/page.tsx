@@ -8,6 +8,7 @@ import { PhenologyCard } from "@/components/dashboard/phenology-card"
 import {
   getWeatherData,
   calculateNDVI,
+  calculateNASAIndices,
   analyzeCropHealth,
   getIrrigationStatus,
   calculatePhenology,
@@ -57,18 +58,17 @@ export default async function DashboardPage() {
 
   const farmIndexResults: FarmIndexResult[] = await Promise.all((farms || []).map(async (farm) => {
     const farmCrop = crops?.find((crop) => crop.farm_id === farm.id)
-    const ndviResponse = await calculateNDVI(farm.latitude, farm.longitude, farmCrop?.planting_date || new Date().toISOString().slice(0, 10))
-    const ndvi = Math.max(0, Math.min(1, ndviResponse ?? 0.52))
+    const indices = await calculateNASAIndices(farm.latitude, farm.longitude)
     return {
       id: farm.id,
       name: farm.name,
       location: farm.location_name,
       area: farm.area_hectares,
-      ndvi,
-      evi: Math.max(0, Math.min(1, ndvi * 0.84)),
-      ndre: Math.max(0, Math.min(1, ndvi * 0.63)),
-      savi: Math.max(0, Math.min(1, ndvi * 0.76)),
-      ndwi: Math.max(0, Math.min(1, ndvi * 0.42)),
+      ndvi: indices?.ndvi ?? null,
+      evi: indices?.evi ?? null,
+      ndre: indices?.ndre ?? null,
+      savi: indices?.savi ?? null,
+      ndwi: indices?.ndwi ?? null,
     }
   }))
 
