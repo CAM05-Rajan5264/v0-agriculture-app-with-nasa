@@ -50,7 +50,7 @@ export function CropCard({ crop }: CropCardProps) {
   }
 
   return (
-    <Card className="border-border bg-card transition-shadow hover:shadow-md">
+    <Card className="glossy-surface overflow-hidden rounded-3xl border-white/70 transition-all hover:-translate-y-1 hover:shadow-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <CardTitle className="text-lg font-medium text-foreground">{crop.name}</CardTitle>

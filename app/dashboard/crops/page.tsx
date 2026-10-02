@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { AddCropDialog } from "@/components/crops/add-crop-dialog"
 import { CropCard } from "@/components/crops/crop-card"
-import { Sprout } from "lucide-react"
+import { Sprout, Activity, CalendarDays, Layers3 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
 export default async function CropsPage() {
@@ -18,14 +19,8 @@ export default async function CropsPage() {
   return (
     <div className="flex flex-col">
       <Header title="Crops" unreadAlerts={unreadAlerts || 0} />
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Crop Management</h2>
-            <p className="text-muted-foreground">Track and monitor your crops across all farms</p>
-          </div>
-          <AddCropDialog farms={farms || []} />
-        </div>
+      <div className="p-4 md:p-6">
+        <div className="glossy-surface mb-6 overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Growing portfolio</Badge><h2 className="text-3xl font-bold tracking-tight text-foreground">Crop Management</h2><p className="mt-1 text-muted-foreground">Track active seasons, planting windows, and crop health across every farm.</p></div><AddCropDialog farms={farms || []} /></div><div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3"><div className="rounded-2xl bg-white/55 p-4"><Sprout className="size-4 text-primary" /><p className="mt-3 text-2xl font-bold">{crops?.length || 0}</p><p className="text-xs text-muted-foreground">Tracked crops</p></div><div className="rounded-2xl bg-white/55 p-4"><Activity className="size-4 text-emerald-600" /><p className="mt-3 text-2xl font-bold">{crops?.filter((crop) => crop.status === "active").length || 0}</p><p className="text-xs text-muted-foreground">Active seasons</p></div><div className="hidden rounded-2xl bg-white/55 p-4 md:block"><Layers3 className="size-4 text-violet-600" /><p className="mt-3 text-2xl font-bold">{farms?.length || 0}</p><p className="text-xs text-muted-foreground">Farms covered</p></div></div></div>
 
         {farms && farms.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">

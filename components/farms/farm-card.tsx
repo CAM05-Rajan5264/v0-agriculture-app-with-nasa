@@ -29,7 +29,7 @@ export function FarmCard({ farm }: FarmCardProps) {
   }
 
   return (
-    <Card className="border-border bg-card transition-shadow hover:shadow-md">
+    <Card className="glossy-surface overflow-hidden rounded-3xl border-white/70 transition-all hover:-translate-y-1 hover:shadow-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-medium text-foreground">{farm.name}</CardTitle>
         <div className="flex gap-1">
