@@ -40,14 +40,15 @@ export default async function DashboardPage() {
   const primaryFarm = farms?.[0]
   const primaryCrop = crops?.[0]
 
-  let weather = null
+  const weatherResults = await Promise.all((farms || []).map(async (farm) => ({
+    farm,
+    weather: await getWeatherData(farm.latitude, farm.longitude),
+  })))
   let cropHealth = null
   let irrigation = null
   let phenology = null
 
   if (primaryFarm) {
-    weather = await getWeatherData(primaryFarm.latitude, primaryFarm.longitude)
-
     if (primaryCrop) {
       const ndvi = await calculateNDVI(primaryFarm.latitude, primaryFarm.longitude, primaryCrop.planting_date)
       cropHealth = analyzeCropHealth(ndvi)
@@ -131,7 +132,17 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <>
-            {weather && <WeatherCard weather={weather} locationName={primaryFarm.location_name} />}
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Current weather by farm</h3>
+                <p className="text-sm text-muted-foreground">Live NASA POWER conditions for every farm location.</p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {weatherResults.map(({ farm, weather }) => (
+                  <WeatherCard key={farm.id} weather={weather} locationName={`${farm.name} · ${farm.location_name}`} />
+                ))}
+              </div>
+            </section>
 
             {!primaryCrop ? (
               <div className="flex flex-col items-center justify-center glossy-surface rounded-2xl border-dashed py-10 md:py-12 px-4 backdrop-blur-sm">
