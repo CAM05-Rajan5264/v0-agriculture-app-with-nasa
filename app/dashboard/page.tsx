@@ -17,7 +17,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MapPin, Sprout, Activity } from "lucide-react"
 import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
-import { GlossyInsights, GlossyStatus } from "@/components/dashboard/glossy-insights"
+import { GlossyStatus } from "@/components/dashboard/glossy-insights"
 import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/farm-index-results"
 
 export default async function DashboardPage() {
@@ -110,8 +110,6 @@ export default async function DashboardPage() {
         />
 
         {farmIndexResults.length > 0 && <FarmIndexResults farms={farmIndexResults} />}
-
-        <GlossyInsights />
 
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
