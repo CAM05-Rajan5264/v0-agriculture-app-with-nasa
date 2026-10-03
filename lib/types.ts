@@ -47,12 +47,12 @@ export interface Alert {
 }
 
 export interface NASAWeatherData {
-  temperature: number
-  humidity: number
-  precipitation: number
-  windSpeed: number
-  solarRadiation: number
-  evapotranspiration: number
+  temperature: number | null
+  humidity: number | null
+  precipitation: number | null
+  windSpeed: number | null
+  solarRadiation: number | null
+  evapotranspiration: number | null
 }
 
 export interface NASAPowerResponse {

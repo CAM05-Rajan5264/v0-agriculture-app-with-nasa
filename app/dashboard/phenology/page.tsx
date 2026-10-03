@@ -129,15 +129,15 @@ export default async function PhenologyPage() {
                       <p className="text-xs text-muted-foreground">Temperature</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{weather.humidity.toFixed(0)}%</p>
+                      <p className="text-2xl font-bold text-foreground">{weather.humidity === null ? "Unavailable" : `${weather.humidity.toFixed(0)}%`}</p>
                       <p className="text-xs text-muted-foreground">Humidity</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{weather.precipitation.toFixed(1)}mm</p>
+                      <p className="text-2xl font-bold text-foreground">{weather.precipitation === null ? "Unavailable" : `${weather.precipitation.toFixed(1)}mm`}</p>
                       <p className="text-xs text-muted-foreground">Rainfall</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{weather.windSpeed.toFixed(1)}m/s</p>
+                      <p className="text-2xl font-bold text-foreground">{weather.windSpeed === null ? "Unavailable" : `${weather.windSpeed.toFixed(1)}m/s`}</p>
                       <p className="text-xs text-muted-foreground">Wind Speed</p>
                     </div>
                   </div>
