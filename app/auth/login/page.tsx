@@ -11,7 +11,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { FarmPulseLogo } from "@/components/ui/farmpulse-logo"
 import Image from "next/image"
-import { Leaf } from "lucide-react"
+import { Leaf, PlayCircle } from "lucide-react"
+
+const DEMO_EMAIL = "demo@farmpulse.app"
+const DEMO_PASSWORD = "FarmPulseDemo2026!"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -163,6 +166,29 @@ export default function LoginPage() {
                     >
                       {isLoading ? "Signing in..." : "Sign in"}
                     </Button>
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Demo access</p>
+                          <p className="text-xs text-muted-foreground">Explore FarmPulse with sample farm data</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            setEmail(DEMO_EMAIL)
+                            setPassword(DEMO_PASSWORD)
+                            setError(null)
+                          }}
+                        >
+                          <PlayCircle className="h-4 w-4" aria-hidden="true" />
+                          Use demo
+                        </Button>
+                      </div>
+                      <p className="mt-2 font-mono text-[11px] text-muted-foreground">{DEMO_EMAIL} · {DEMO_PASSWORD}</p>
+                    </div>
                   </div>
                   <div className="mt-5 text-center text-sm text-muted-foreground">
                     Don&apos;t have an account?{" "}
