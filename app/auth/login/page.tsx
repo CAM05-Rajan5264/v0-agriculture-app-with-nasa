@@ -170,7 +170,7 @@ export default function LoginPage() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-foreground">Demo access</p>
-                          <p className="text-xs text-muted-foreground">Explore FarmPulse with sample farm data</p>
+                          <p className="text-xs text-muted-foreground">Explore FarmPulse with your own farm data</p>
                         </div>
                         <Button
                           type="button"
