@@ -41,7 +41,7 @@ export function GlossyInsights() {
         <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-base"><TrendingUp className="size-4 text-primary" /> Farm performance</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">Historical health signal and five-day outlook</p>
+            <p className="mt-1 text-xs text-muted-foreground">Live farm signals and five-day outlook</p>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"><ArrowUpRight className="size-3" /> 12.4%</span>
         </CardHeader>
