@@ -10,6 +10,7 @@ import type { CropMonitoringData } from "@/lib/nasa-earth-observation"
 import { generateCropMonitoringData } from "@/lib/nasa-earth-observation"
 import { getTrendFallback, getWeatherData } from "@/lib/nasa-api"
 import { FarmSatelliteHybrid } from "@/components/crop-monitoring/farm-satellite-hybrid"
+import { PlantVisionScanner } from "@/components/crop-monitoring/plant-vision-scanner"
 
 interface CropField {
   id: string
@@ -125,6 +126,8 @@ export default function CropMonitoringPage() {
           </CardContent>
         </Card>
       )}
+
+      {field && <PlantVisionScanner farmId={field.id} />}
 
       {loading ? (
         <Card className="glossy-surface overflow-hidden rounded-2xl">
