@@ -27,16 +27,26 @@ export async function POST() {
 
     console.log("[v0] Found", alertTriggers.length, "alert triggers")
 
-    // Insert new alerts
-    const alertsToInsert = alertTriggers.map((trigger) => ({
-      user_id: user.id,
-      farm_id: trigger.farmId || null,
-      crop_id: trigger.cropId || null,
-      alert_type: trigger.type,
-      severity: trigger.severity,
-      title: trigger.title,
-      message: trigger.message,
-    }))
+    const { data: recentAlerts } = await supabase
+      .from("alerts")
+      .select("farm_id, crop_id, alert_type, title")
+      .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+
+    const recentKeys = new Set((recentAlerts || []).map((alert) =>
+      [alert.farm_id || "", alert.crop_id || "", alert.alert_type, alert.title].join("|"),
+    ))
+
+    const alertsToInsert = alertTriggers
+      .filter((trigger) => !recentKeys.has([trigger.farmId || "", trigger.cropId || "", trigger.type, trigger.title].join("|")))
+      .map((trigger) => ({
+        user_id: user.id,
+        farm_id: trigger.farmId || null,
+        crop_id: trigger.cropId || null,
+        alert_type: trigger.type,
+        severity: trigger.severity,
+        title: trigger.title,
+        message: trigger.message,
+      }))
 
     if (alertsToInsert.length > 0) {
       const { error } = await supabase.from("alerts").insert(alertsToInsert)
