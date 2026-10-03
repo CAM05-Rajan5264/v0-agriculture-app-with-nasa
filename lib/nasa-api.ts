@@ -151,13 +151,11 @@ export async function getWeatherData(latitude: number, longitude: number): Promi
       if (validTemp !== null) {
         return {
           temperature: validTemp,
-          humidity: validHumidity,
-          precipitation: validPrecip,
-          windSpeed: validWind,
-          solarRadiation: validSolar,
-          evapotranspiration: validHumidity !== null && validWind !== null && validSolar !== null
-            ? calculateET(validTemp, validHumidity, validWind, validSolar)
-            : null,
+          humidity: validHumidity ?? getTrendFallback(latitude, longitude).humidity,
+          precipitation: validPrecip ?? getTrendFallback(latitude, longitude).precipitation,
+          windSpeed: validWind ?? getTrendFallback(latitude, longitude).wind,
+          solarRadiation: validSolar ?? 200,
+          evapotranspiration: calculateET(validTemp, validHumidity ?? getTrendFallback(latitude, longitude).humidity, validWind ?? getTrendFallback(latitude, longitude).wind, validSolar ?? 200),
         }
       }
     }

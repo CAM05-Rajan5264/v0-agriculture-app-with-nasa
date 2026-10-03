@@ -30,7 +30,7 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
   const setupItems = [
     { label: "Farm location", complete: farmCount > 0 },
     { label: "Active crop", complete: cropCount > 0 },
-    { label: "Alert review", complete: farmCount > 0 && cropCount > 0 && alertCount === 0 },
+    { label: "Alert review", complete: alertCount === 0 },
   ]
   const completed = setupItems.filter((item) => item.complete).length
 
