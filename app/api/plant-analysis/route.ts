@@ -20,10 +20,10 @@ export async function POST(request: Request) {
   const bytes = Buffer.from(await image.arrayBuffer())
 
   try {
-    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY
-    if (!apiKey) return Response.json({ error: "Plant diagnosis is not configured. Add a Plant.id API key to enable image analysis." }, { status: 503 })
+    const apiKey = process.env.KINDWISE_API_KEY || process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY
+    if (!apiKey) return Response.json({ error: "Plant diagnosis is not configured." }, { status: 503 })
 
-    const response = await fetch("https://api.plant.id/v3/identification", {
+    const response = await fetch("https://plant.id/api/v3/identification", {
       method: "POST",
       headers: { "Api-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
     const payload = await response.json().catch(() => null)
     if (!response.ok) {
       console.error("[v0] Plant.id request failed:", response.status, payload)
-      return Response.json({ error: "Plant diagnosis provider rejected the image. Please try a clearer photo." }, { status: 502 })
+      const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "The diagnosis provider rejected the image."
+      return Response.json({ error: `${providerMessage} Please try a clear JPG, PNG, or WEBP photo.` }, { status: 502 })
     }
 
     const suggestions = payload?.result?.classification?.suggestions || []
