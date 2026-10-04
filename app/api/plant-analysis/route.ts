@@ -15,7 +15,8 @@ const analysisSchema = z.object({
 export async function POST(request: Request) {
   const formData = await request.formData()
   const image = formData.get("image")
-  if (!(image instanceof File) || !image.type.startsWith("image/")) return Response.json({ error: "Please upload a valid plant image." }, { status: 400 })
+  const supportedTypes = new Set(["image/jpeg", "image/png", "image/webp"])
+  if (!(image instanceof File) || !supportedTypes.has(image.type)) return Response.json({ error: "Please upload a JPG, PNG, or WEBP plant image." }, { status: 400 })
   if (image.size > 8 * 1024 * 1024) return Response.json({ error: "Image must be smaller than 8 MB." }, { status: 413 })
   const bytes = Buffer.from(await image.arrayBuffer())
 
@@ -65,11 +66,11 @@ export async function POST(request: Request) {
     ]
     const parsed = analysisSchema.parse({
       summary: diseases.length ? "Potential health issues detected. Review the findings and confirm severe cases with an agronomist." : "No clear disease signal was detected. Continue monitoring the crop.",
-      findings: findings.length ? findings : [{ category: "healthy", name: "Insufficient evidence", confidence: 0, severity: "low", evidence: "The provider returned no confident finding for this image.", action: "Retake a close-up photo in natural light." }],
+      findings: (findings.length ? findings : [{ category: "healthy", name: "Insufficient evidence", confidence: 0, severity: "low", evidence: "The provider returned no confident finding for this image.", action: "Retake a close-up photo in natural light." }]).slice(0, 6),
     })
     return Response.json(parsed)
   } catch (error) {
     console.error("[v0] Plant analysis failed:", error)
-    return Response.json({ error: "Plant diagnosis is temporarily unavailable. Please try again with a clear JPG, PNG, or WEBP image." }, { status: 502 })
+    return Response.json({ error: "The diagnosis response could not be processed. Please retake the photo in natural light and try again." }, { status: 502 })
   }
 }
