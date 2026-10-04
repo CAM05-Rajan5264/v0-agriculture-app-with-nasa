@@ -28,8 +28,13 @@ export function PlantVisionScanner({ farmId, cropId }: PlantVisionScannerProps) 
     try {
       const body = new FormData(); body.append("image", file); if (farmId) body.append("farmId", farmId); if (cropId) body.append("cropId", cropId)
       const response = await fetch("/api/plant-analysis", { method: "POST", body })
-      const result = await response.json()
+      const raw = await response.text()
+      let result: { error?: string; findings?: Finding[]; summary?: string } = {}
+      if (raw.trim()) {
+        try { result = JSON.parse(raw) } catch { throw new Error("The diagnosis service returned an invalid response. Please try again.") }
+      }
       if (!response.ok) throw new Error(result.error || "Plant analysis failed")
+      if (!result.summary && !result.findings?.length) throw new Error("No diagnosis was returned. Please try a clearer plant image.")
       setFindings(result.findings || []); setSummary(result.summary || "No clear findings were detected.")
     } catch (err) { setError(err instanceof Error ? err.message : "Plant analysis failed") } finally { setLoading(false) }
   }
