@@ -1,4 +1,3 @@
-import { generateText, Output } from "ai"
 import { z } from "zod"
 
 const analysisSchema = z.object({
@@ -21,15 +20,50 @@ export async function POST(request: Request) {
   const bytes = Buffer.from(await image.arrayBuffer())
 
   try {
-    const { output } = await generateText({
-      model: "google/gemini-3-flash",
-      output: Output.object({ schema: analysisSchema }),
-      system: "You are an agricultural crop scout. Analyze only visible evidence in the plant photo. Identify likely disease, pest damage, nutrient deficiency, or healthy tissue. Never claim certainty, avoid pesticide dosage, and recommend an agronomist for severe or uncertain cases. Return concise practical actions.",
-      messages: [{ role: "user", content: [{ type: "text", text: "Analyze this plant photo for early visible signs of disease, pests, or nutrient deficiency. If the image is not a plant or evidence is insufficient, say so in the summary and use one healthy or uncertain finding." }, { type: "image", image: bytes, mediaType: image.type }] }],
-    })
+    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY
+    if (!apiKey) return Response.json({ error: "Plant diagnosis is not configured. Add a Plant.id API key to enable image analysis." }, { status: 503 })
 
-    if (!output) return Response.json({ error: "The vision model did not return a diagnosis. Please try a clearer image." }, { status: 502 })
-    return Response.json(output)
+    const response = await fetch("https://api.plant.id/v3/identification", {
+      method: "POST",
+      headers: { "Api-Key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        images: [`data:${image.type};base64,${bytes.toString("base64")}`],
+        health_assessment: true,
+        similar_images: false,
+        details: "common_names,description,treatment,classification",
+      }),
+    })
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) {
+      console.error("[v0] Plant.id request failed:", response.status, payload)
+      return Response.json({ error: "Plant diagnosis provider rejected the image. Please try a clearer photo." }, { status: 502 })
+    }
+
+    const suggestions = payload?.result?.classification?.suggestions || []
+    const diseases = payload?.result?.health_assessment?.diseases || []
+    const findings = [
+      ...diseases.slice(0, 5).map((disease: { name?: string; probability?: number; description?: string; treatment?: { chemical?: string[]; biological?: string[] } }) => ({
+        category: "disease" as const,
+        name: disease.name || "Possible plant disease",
+        confidence: Math.min(1, Math.max(0, disease.probability || 0)),
+        severity: (disease.probability || 0) > 0.8 ? "high" as const : "moderate" as const,
+        evidence: disease.description || "Visible symptoms detected by the plant health model.",
+        action: disease.treatment?.biological?.[0] || disease.treatment?.chemical?.[0] || "Isolate the affected plant and confirm with an agronomist.",
+      })),
+      ...suggestions.slice(0, 3).map((suggestion: { name?: string; probability?: number; details?: { description?: string } }) => ({
+        category: "healthy" as const,
+        name: suggestion.name || "Plant identified",
+        confidence: Math.min(1, Math.max(0, suggestion.probability || 0)),
+        severity: "low" as const,
+        evidence: suggestion.details?.description || "Plant identity suggested from visible leaf and plant features.",
+        action: "Continue monitoring and compare with future photos.",
+      })),
+    ]
+    const parsed = analysisSchema.parse({
+      summary: diseases.length ? "Potential health issues detected. Review the findings and confirm severe cases with an agronomist." : "No clear disease signal was detected. Continue monitoring the crop.",
+      findings: findings.length ? findings : [{ category: "healthy", name: "Insufficient evidence", confidence: 0, severity: "low", evidence: "The provider returned no confident finding for this image.", action: "Retake a close-up photo in natural light." }],
+    })
+    return Response.json(parsed)
   } catch (error) {
     console.error("[v0] Plant analysis failed:", error)
     return Response.json({ error: "Plant diagnosis is temporarily unavailable. Please try again with a clear JPG, PNG, or WEBP image." }, { status: 502 })
