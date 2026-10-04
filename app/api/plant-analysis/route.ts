@@ -20,12 +20,15 @@ export async function POST(request: Request) {
   const bytes = Buffer.from(await image.arrayBuffer())
 
   try {
-    const apiKey = process.env.KINDWISE_API_KEY || process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY
+    const apiKey = process.env.PLANT_ID_API_KEY || process.env.PLANTID_API_KEY || process.env.KINDWISE_API_KEY
     if (!apiKey) return Response.json({ error: "Plant diagnosis is not configured." }, { status: 503 })
 
-    const response = await fetch("https://plant.id/api/v3/identification", {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30_000)
+    const response = await fetch("https://api.plant.id/v3/identification", {
       method: "POST",
       headers: { "Api-Key": apiKey, "Content-Type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
         images: [`data:${image.type};base64,${bytes.toString("base64")}`],
         health_assessment: true,
@@ -33,11 +36,13 @@ export async function POST(request: Request) {
         details: "common_names,description,treatment,classification",
       }),
     })
+    clearTimeout(timeout)
     const payload = await response.json().catch(() => null)
     if (!response.ok) {
       console.error("[v0] Plant.id request failed:", response.status, payload)
-      const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : "The diagnosis provider rejected the image."
-      return Response.json({ error: `${providerMessage} Please try a clear JPG, PNG, or WEBP photo.` }, { status: 502 })
+      const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : response.status === 401 ? "The plant diagnosis API key was rejected." : "The diagnosis provider rejected the image."
+      const suffix = response.status === 401 ? "Check the Plant.id API key configuration." : "Please try a clear JPG, PNG, or WEBP photo."
+      return Response.json({ error: `${providerMessage} ${suffix}` }, { status: 502 })
     }
 
     const suggestions = payload?.result?.classification?.suggestions || []
