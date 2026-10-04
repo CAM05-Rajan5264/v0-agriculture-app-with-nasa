@@ -31,12 +31,18 @@ export async function POST(request: Request) {
       headers: { "Api-Key": apiKey, "Content-Type": "application/json" },
       signal: controller.signal,
       body: JSON.stringify({
-        images: [`data:${image.type};base64,${bytes.toString("base64")}`],
-        details: "disease,description,treatment,classification",
+        images: [bytes.toString("base64")],
       }),
     })
     clearTimeout(timeout)
-    const payload = await response.json().catch(() => null)
+    const initialPayload = await response.json().catch(() => null)
+    let payload = initialPayload
+    if (response.ok && initialPayload?.access_token) {
+      const resultResponse = await fetch(`https://crop.kindwise.com/api/v1/identification/${initialPayload.access_token}`, {
+        headers: { "Api-Key": apiKey },
+      })
+      payload = await resultResponse.json().catch(() => null)
+    }
     if (!response.ok) {
       console.error("[v0] Plant.id request failed:", response.status, payload)
       const providerMessage = typeof payload?.error?.message === "string" ? payload.error.message : response.status === 401 ? "The Crop Health API key was rejected." : "The Crop Health provider rejected the image."
@@ -44,16 +50,16 @@ export async function POST(request: Request) {
       return Response.json({ error: `${providerMessage} ${suffix}` }, { status: 502 })
     }
 
-    const suggestions = payload?.result?.classification?.suggestions || []
-    const diseases = payload?.result?.health_assessment?.diseases || []
+    const suggestions = payload?.result?.crop?.suggestions || []
+    const diseases = payload?.result?.disease?.suggestions || []
     const findings = [
-      ...diseases.slice(0, 5).map((disease: { name?: string; probability?: number; description?: string; treatment?: { chemical?: string[]; biological?: string[] } }) => ({
-        category: "disease" as const,
+      ...diseases.slice(0, 5).map((disease: { name?: string; probability?: number; details?: { description?: string; treatment?: { chemical?: string[]; biological?: string[] }; symptoms?: string } }) => ({
+        category: /healthy|no disease/i.test(disease.name || "") ? "healthy" as const : "disease" as const,
         name: disease.name || "Possible plant disease",
         confidence: Math.min(1, Math.max(0, disease.probability || 0)),
         severity: (disease.probability || 0) > 0.8 ? "high" as const : "moderate" as const,
-        evidence: disease.description || "Visible symptoms detected by the plant health model.",
-        action: disease.treatment?.biological?.[0] || disease.treatment?.chemical?.[0] || "Isolate the affected plant and confirm with an agronomist.",
+        evidence: disease.details?.description || disease.details?.symptoms || "Visible symptoms detected by the plant health model.",
+        action: disease.details?.treatment?.biological?.[0] || disease.details?.treatment?.chemical?.[0] || "Isolate the affected plant and confirm with an agronomist.",
       })),
       ...suggestions.slice(0, 3).map((suggestion: { name?: string; probability?: number; details?: { description?: string } }) => ({
         category: "healthy" as const,
