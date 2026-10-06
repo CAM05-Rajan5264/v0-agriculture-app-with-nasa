@@ -20,6 +20,7 @@ import {
   Activity,
   Leaf,
   GraduationCap,
+  Gamepad2,
   MessageCircle,
 } from "lucide-react"
 
@@ -33,6 +34,7 @@ const navigation = [
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
+  { name: "Farm Game", href: "/dashboard/farm-game", icon: Gamepad2 },
   { name: "Farm Assistant", href: "/dashboard/farm-assistant", icon: MessageCircle },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
