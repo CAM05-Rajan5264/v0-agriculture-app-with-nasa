@@ -1,0 +1,44 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { Check, ChevronDown, Filter, Minus, Plus, Search, ShoppingCart, Sprout, Truck, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+
+type Product = { id: number; name: string; category: string; price: number; unit: string; seller: string; rating: number; accent: string; description: string }
+
+const products: Product[] = [
+  { id: 1, name: "Premium tomato seeds", category: "Seeds", price: 8.5, unit: "100 seeds", seller: "GreenSprout Co.", rating: 4.9, accent: "from-red-100 to-orange-50", description: "High-yield, disease-resistant hybrid seeds." },
+  { id: 2, name: "Organic compost", category: "Soil care", price: 14, unit: "25 kg bag", seller: "Earthwise Organics", rating: 4.8, accent: "from-amber-100 to-lime-50", description: "Rich, screened compost for healthier soil." },
+  { id: 3, name: "Drip irrigation kit", category: "Equipment", price: 42, unit: "50 m kit", seller: "AquaHarvest", rating: 4.7, accent: "from-sky-100 to-blue-50", description: "Water-saving kit for beds and small farms." },
+  { id: 4, name: "Neem oil concentrate", category: "Crop care", price: 11.75, unit: "500 ml", seller: "Natural Crop Care", rating: 4.6, accent: "from-emerald-100 to-green-50", description: "Plant-friendly protection for common pests." },
+  { id: 5, name: "Soil moisture meter", category: "Equipment", price: 25, unit: "1 meter", seller: "FieldSense", rating: 4.8, accent: "from-violet-100 to-slate-50", description: "Quick root-zone readings without batteries." },
+  { id: 6, name: "Pollinator flower mix", category: "Seeds", price: 6.25, unit: "250 g", seller: "BeeLine Farms", rating: 4.9, accent: "from-yellow-100 to-pink-50", description: "A colorful mix that supports beneficial insects." },
+]
+
+export function AgroMarket() {
+  const [query, setQuery] = useState("")
+  const [category, setCategory] = useState("All products")
+  const [cart, setCart] = useState<Record<number, number>>({})
+  const [cartOpen, setCartOpen] = useState(false)
+  const categories = ["All products", ...new Set(products.map((product) => product.category))]
+  const visibleProducts = useMemo(() => products.filter((product) => (category === "All products" || product.category === category) && `${product.name} ${product.description}`.toLowerCase().includes(query.toLowerCase())), [category, query])
+  const cartItems = products.filter((product) => cart[product.id])
+  const itemCount = Object.values(cart).reduce((total, quantity) => total + quantity, 0)
+  const total = cartItems.reduce((sum, product) => sum + product.price * cart[product.id], 0)
+  const add = (id: number) => setCart((current) => ({ ...current, [id]: (current[id] || 0) + 1 }))
+  const remove = (id: number) => setCart((current) => { const next = { ...current }; if (next[id] <= 1) delete next[id]; else next[id] -= 1; return next })
+
+  return <div className="relative mx-auto max-w-7xl space-y-6">
+    <section className="overflow-hidden rounded-3xl bg-[linear-gradient(120deg,#103b2b,#216548_62%,#c6dd9c)] p-6 text-white shadow-xl md:p-8">
+      <div className="max-w-2xl"><Badge className="border-white/20 bg-white/10 text-white hover:bg-white/20">Farmer-first marketplace</Badge><h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">Everything your farm needs, in one place.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Source trusted seeds, soil care, equipment, and crop protection from suppliers built for better harvests.</p><div className="mt-6 flex flex-wrap gap-3"><div className="flex items-center gap-2 text-xs text-white/80"><Check className="size-4 text-lime-300" />Verified sellers</div><div className="flex items-center gap-2 text-xs text-white/80"><Truck className="size-4 text-lime-300" />Farm delivery</div><div className="flex items-center gap-2 text-xs text-white/80"><Sprout className="size-4 text-lime-300" />Crop-smart supplies</div></div></div>
+    </section>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search seeds, tools, soil care..." className="h-11 rounded-xl pl-10" /></div><Button variant="outline" className="h-11 gap-2 rounded-xl md:hidden"><Filter className="size-4" />Filters</Button><Button onClick={() => setCartOpen(true)} className="h-11 gap-2 rounded-xl bg-primary"><ShoppingCart className="size-4" />Cart {itemCount > 0 && <Badge className="bg-white text-primary">{itemCount}</Badge>}</Button></div>
+    <div className="flex gap-2 overflow-x-auto pb-1">{categories.map((item) => <Button key={item} variant={category === item ? "default" : "outline"} onClick={() => setCategory(item)} className="shrink-0 rounded-full">{item}</Button>)}</div>
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{visibleProducts.map((product) => <Card key={product.id} className="group overflow-hidden rounded-2xl border-border/70 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"><div className={`flex h-36 items-center justify-center bg-gradient-to-br ${product.accent}`}><Sprout className="size-16 text-primary/50 transition group-hover:scale-110" /></div><CardContent className="p-5"><div className="flex items-start justify-between gap-2"><div><Badge variant="secondary" className="mb-2 text-[10px]">{product.category}</Badge><h2 className="font-semibold">{product.name}</h2></div><span className="font-semibold text-primary">${product.price.toFixed(2)}</span></div><p className="mt-2 min-h-10 text-sm text-muted-foreground">{product.description}</p><div className="mt-4 flex items-center justify-between text-xs text-muted-foreground"><span>{product.seller}</span><span>★ {product.rating}</span></div><div className="mt-4 flex items-center justify-between border-t pt-4"><span className="text-xs text-muted-foreground">per {product.unit}</span><Button onClick={() => add(product.id)} size="sm" className="rounded-lg">Add to cart</Button></div></CardContent></Card>)}</div>
+    {visibleProducts.length === 0 && <Card className="rounded-2xl"><CardContent className="py-16 text-center text-muted-foreground">No products match your search.</CardContent></Card>}
+    {cartOpen && <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setCartOpen(false)}><aside onClick={(event) => event.stopPropagation()} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-background p-6 shadow-2xl"><div className="flex items-center justify-between"><div><h2 className="text-xl font-semibold">Your cart</h2><p className="text-sm text-muted-foreground">{itemCount} item{itemCount === 1 ? "" : "s"}</p></div><Button variant="ghost" size="icon" onClick={() => setCartOpen(false)} aria-label="Close cart"><X className="size-5" /></Button></div><div className="mt-6 flex-1 space-y-4 overflow-y-auto">{cartItems.length === 0 ? <div className="py-16 text-center text-muted-foreground">Your cart is ready for supplies.</div> : cartItems.map((product) => <div key={product.id} className="flex gap-3 border-b pb-4"><div className={`flex size-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${product.accent}`}><Sprout className="size-7 text-primary/50" /></div><div className="min-w-0 flex-1"><p className="truncate font-medium">{product.name}</p><p className="text-sm text-primary">${product.price.toFixed(2)}</p><div className="mt-2 flex items-center gap-2"><Button variant="outline" size="icon" className="size-7" onClick={() => remove(product.id)} aria-label={`Remove one ${product.name}`}><Minus className="size-3" /></Button><span className="w-4 text-center text-sm">{cart[product.id]}</span><Button variant="outline" size="icon" className="size-7" onClick={() => add(product.id)} aria-label={`Add one ${product.name}`}><Plus className="size-3" /></Button></div></div></div>)}</div><div className="border-t pt-5"><div className="flex justify-between text-lg font-semibold"><span>Total</span><span>${total.toFixed(2)}</span></div><Button className="mt-4 h-11 w-full rounded-xl" disabled={!itemCount}>Proceed to checkout</Button><p className="mt-3 text-center text-xs text-muted-foreground">Secure checkout · Delivery options at checkout</p></div></aside></div>}
+  </div>
+}
