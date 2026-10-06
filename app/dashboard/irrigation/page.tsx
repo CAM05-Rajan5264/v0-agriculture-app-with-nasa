@@ -89,7 +89,7 @@ export default async function IrrigationPage() {
                 </div>
 
                 {/* Cards Grid */}
-                <div className="mb-4">{soilMoisture.length > 0 ? <SoilMoistureTrends farmName={crop.farms.name} points={soilMoisture} /> : <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">NASA POWER soil moisture data is unavailable for this farm.</div>}</div>
+                <div className="mb-4">{soilMoisture.length > 0 ? <SoilMoistureTrends farms={[{ farmId: crop.id, farmName: crop.farms.name, points: soilMoisture }]} /> : <div className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">NASA POWER soil moisture data is unavailable for this farm.</div>}</div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {/* Current Status */}
                   <IrrigationCard irrigation={irrigation} farmName={`${crop.name} at ${crop.farms.name}`} />
