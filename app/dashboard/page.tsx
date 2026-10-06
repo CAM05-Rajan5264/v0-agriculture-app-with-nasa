@@ -12,6 +12,7 @@ import {
   analyzeCropHealth,
   getIrrigationStatus,
   calculatePhenology,
+  getSoilMoistureTrends,
 } from "@/lib/nasa-api"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ import { MapPin, Sprout, Activity } from "lucide-react"
 import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
 import { GlossyStatus } from "@/components/dashboard/glossy-insights"
 import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/farm-index-results"
+import { SoilMoistureTrends, type FarmSoil } from "@/components/dashboard/soil-moisture-trends"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -44,6 +46,12 @@ export default async function DashboardPage() {
     farm,
     weather: await getWeatherData(farm.latitude, farm.longitude),
   })))
+  const soilMoistureFarms: FarmSoil[] = await Promise.all((farms || []).map(async (farm) => ({
+    farmId: farm.id,
+    farmName: farm.name,
+    points: await getSoilMoistureTrends(farm.latitude, farm.longitude),
+  })))
+  const availableSoilMoistureFarms = soilMoistureFarms.filter((farm) => farm.points.length > 0)
   let cropHealth = null
   let irrigation = null
   let phenology = null
@@ -110,6 +118,8 @@ export default async function DashboardPage() {
         />
 
         {farmIndexResults.length > 0 && <FarmIndexResults farms={farmIndexResults} />}
+
+        {availableSoilMoistureFarms.length > 0 && <SoilMoistureTrends farms={availableSoilMoistureFarms} />}
 
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
