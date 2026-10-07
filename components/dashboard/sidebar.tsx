@@ -20,7 +20,6 @@ import {
   Activity,
   Leaf,
   GraduationCap,
-  CalendarDays,
   MessageCircle,
 } from "lucide-react"
 
@@ -34,7 +33,7 @@ const navigation = [
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
-  { name: "Crop Calendar", href: "/dashboard/crop-calendar", icon: CalendarDays },
+
   { name: "Farm Assistant", href: "/dashboard/farm-assistant", icon: MessageCircle },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
