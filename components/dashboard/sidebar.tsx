@@ -18,12 +18,14 @@ import {
   Code,
   Activity,
   Leaf,
+  MapPinned,
   GraduationCap,
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Farms", href: "/dashboard/farms", icon: MapPin },
+  { name: "GPS & Field Mapping", href: "/dashboard/field-mapping", icon: MapPinned },
   { name: "Crop Monitoring", href: "/dashboard/crop-monitoring", icon: Leaf },
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
