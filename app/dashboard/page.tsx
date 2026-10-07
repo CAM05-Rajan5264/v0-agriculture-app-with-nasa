@@ -164,7 +164,7 @@ export default async function DashboardPage() {
                   Start tracking crop health by adding a crop to your farm.
                 </p>
                 <Button asChild className="mt-6 shadow-lg shadow-primary/25">
-                  <Link href="/dashboard/crops">Add Crop</Link>
+                  <Link href="/dashboard/farms">Add Crop</Link>
                 </Button>
               </div>
             ) : (

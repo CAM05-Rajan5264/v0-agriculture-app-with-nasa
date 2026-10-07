@@ -111,7 +111,7 @@ export default async function IrrigationPage() {
               Add crops to your farms to start tracking irrigation needs.
             </p>
             <Button asChild>
-              <Link href="/dashboard/crops">
+              <Link href="/dashboard/farms">
                 <Sprout className="mr-2 h-4 w-4" />
                 Add Crop
               </Link>
