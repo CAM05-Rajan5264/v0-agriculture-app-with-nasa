@@ -7,6 +7,7 @@ import { getWeatherData, getWeatherHistory, getWeatherForecast } from "@/lib/nas
 import { Cloud, MapPin } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { WeatherIntelligence } from "@/components/weather/weather-intelligence"
 
 export default async function WeatherPage() {
   const supabase = await createClient()
@@ -41,6 +42,8 @@ export default async function WeatherPage() {
           <div className="space-y-8">
             {weatherData.map(({ farm, weather, history, forecast }) => (
               <div key={farm.id} className="space-y-4">
+                <WeatherIntelligence farmName={farm.name} weather={weather} forecast={forecast} />
+
                 {/* Current Weather */}
                 <WeatherCard weather={weather} locationName={farm.location_name} />
 
