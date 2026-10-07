@@ -86,7 +86,7 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
           ))}
         </div>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Button asChild size="sm"><Link href={farmCount === 0 ? "/dashboard/farms" : cropCount === 0 ? "/dashboard/crops" : "/dashboard/alerts"}>{farmCount === 0 ? "Add farm" : cropCount === 0 ? "Add crop" : alertCount > 0 ? "Review alerts" : "View overview"}<ArrowRight className="ml-2 h-3.5 w-3.5" /></Link></Button>
+          <Button asChild size="sm"><Link href={farmCount === 0 ? "/dashboard/farms" : cropCount === 0 ? "/dashboard/farms" : "/dashboard/alerts"}>{farmCount === 0 ? "Add farm" : cropCount === 0 ? "Add crop" : alertCount > 0 ? "Review alerts" : "View overview"}<ArrowRight className="ml-2 h-3.5 w-3.5" /></Link></Button>
           <Button asChild size="sm" variant="outline"><Link href="/dashboard/activities"><Plus className="mr-2 h-3.5 w-3.5" />Log activity</Link></Button>
         </div>
       </div>

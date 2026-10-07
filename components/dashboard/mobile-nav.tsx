@@ -11,7 +11,6 @@ import { FarmPulseLogo } from "@/components/ui/farmpulse-logo"
 import {
   LayoutDashboard,
   MapPin,
-  Sprout,
   Bell,
   Settings,
   LogOut,
@@ -22,19 +21,16 @@ import {
   Menu,
   Leaf,
   GraduationCap,
-  MessageCircle,
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Farms", href: "/dashboard/farms", icon: MapPin },
-  { name: "Crops", href: "/dashboard/crops", icon: Sprout },
   { name: "Crop Monitoring", href: "/dashboard/crop-monitoring", icon: Leaf },
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
-  { name: "Farm Assistant", href: "/dashboard/farm-assistant", icon: MessageCircle },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
 ]
