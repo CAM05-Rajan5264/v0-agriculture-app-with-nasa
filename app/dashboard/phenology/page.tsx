@@ -11,6 +11,7 @@ import { TrendingUp, Sprout, Calendar, Leaf, SunMedium } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { CropCalendar } from "@/components/dashboard/crop-calendar"
 
 export default async function PhenologyPage() {
   const supabase = await createClient()
@@ -41,7 +42,7 @@ export default async function PhenologyPage() {
       <div className="p-4 md:p-6">
         <div className="glossy-surface mb-6 overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Season intelligence</Badge><h2 className="text-3xl font-bold tracking-tight text-foreground">Phenology & Crop Guide</h2><p className="mt-1 max-w-2xl text-muted-foreground">See what is growing, what comes next, and how to plan the next field action.</p></div><div className="rounded-2xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary"><Leaf className="mr-2 inline size-4" />{crops?.length || 0} active crops</div></div><div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3"><div className="rounded-2xl bg-white/55 p-4"><TrendingUp className="size-4 text-primary" /><p className="mt-3 text-2xl font-bold">{phenologyData.length}</p><p className="text-xs text-muted-foreground">Growth timelines</p></div><div className="rounded-2xl bg-white/55 p-4"><Calendar className="size-4 text-amber-600" /><p className="mt-3 text-2xl font-bold">{phenologyData.filter(({ guide }) => guide).length}</p><p className="text-xs text-muted-foreground">Harvest guides</p></div><div className="hidden rounded-2xl bg-white/55 p-4 md:block"><SunMedium className="size-4 text-orange-500" /><p className="mt-3 text-2xl font-bold">NASA</p><p className="text-xs text-muted-foreground">Weather-aware</p></div></div></div>
         <Tabs defaultValue="my-crops" className="w-full">
-          <TabsList className="glossy-surface mb-6 h-auto w-full justify-start gap-2 rounded-2xl border-white/70 p-2"><TabsTrigger value="my-crops" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">My Crops</TabsTrigger><TabsTrigger value="crop-guide" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Crop Guide</TabsTrigger><TabsTrigger value="sowing-calendar" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sowing Calendar</TabsTrigger></TabsList>
+          <TabsList className="glossy-surface mb-6 h-auto w-full justify-start gap-2 rounded-2xl border-white/70 p-2"><TabsTrigger value="my-crops" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">My Crops</TabsTrigger><TabsTrigger value="crop-guide" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Crop Guide</TabsTrigger><TabsTrigger value="sowing-calendar" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Sowing Calendar</TabsTrigger><TabsTrigger value="crop-calendar" className="rounded-xl px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Crop Calendar</TabsTrigger></TabsList>
           {/* My Crops Tab - Active crop tracking */}
           <TabsContent value="my-crops">
             <div className="mb-6">
@@ -108,6 +109,8 @@ export default async function PhenologyPage() {
               ))}
             </div>
           </TabsContent>
+
+          <TabsContent value="crop-calendar"><CropCalendar crops={(crops || []).map((crop) => ({ id: crop.id, name: crop.name, variety: crop.variety, planting_date: crop.planting_date, expected_harvest_date: crop.expected_harvest_date, farms: { name: crop.farms?.name } }))} /></TabsContent>
 
           {/* Sowing Calendar Tab - Weather-based recommendations */}
           <TabsContent value="sowing-calendar">
