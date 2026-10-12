@@ -3,7 +3,7 @@
 import type { Farm } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Trash2, Eye } from "lucide-react"
+import { MapPin, Trash2, Eye, LocateFixed, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -15,7 +15,30 @@ interface FarmCardProps {
 
 export function FarmCard({ farm }: FarmCardProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLocating, setIsLocating] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
   const router = useRouter()
+
+  const updateCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Location services are not supported by this browser.")
+      return
+    }
+    setIsLocating(true)
+    setLocationError(null)
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const latitude = Number(coords.latitude.toFixed(6))
+      const longitude = Number(coords.longitude.toFixed(6))
+      const supabase = createClient()
+      const { error } = await supabase.from("farms").update({ latitude, longitude }).eq("id", farm.id)
+      if (error) setLocationError(error.message)
+      else router.refresh()
+      setIsLocating(false)
+    }, (error) => {
+      setLocationError(error.message || "Could not access your current location.")
+      setIsLocating(false)
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 })
+  }
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this farm? All associated crops and data will be removed.")) {
@@ -50,11 +73,8 @@ export function FarmCard({ farm }: FarmCardProps) {
           <MapPin className="h-4 w-4" />
           <span>{farm.location_name}</span>
         </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          <span>
-            Coordinates: {farm.latitude.toFixed(4)}, {farm.longitude.toFixed(4)}
-          </span>
-        </div>
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>Coordinates: {farm.latitude.toFixed(4)}, {farm.longitude.toFixed(4)}</span><Button type="button" variant="outline" size="sm" onClick={updateCurrentLocation} disabled={isLocating} className="h-8 shrink-0 px-2">{isLocating ? <Loader2 className="size-3.5 animate-spin" /> : <LocateFixed className="size-3.5" />}<span className="sr-only">{isLocating ? "Updating location" : "Use current location"}</span></Button></div>
+        {locationError && <p role="alert" className="mt-2 text-xs text-destructive">{locationError}</p>}
         {farm.area_hectares && (
           <div className="mt-1 text-xs text-muted-foreground">
             <span>Area: {farm.area_hectares} hectares</span>
