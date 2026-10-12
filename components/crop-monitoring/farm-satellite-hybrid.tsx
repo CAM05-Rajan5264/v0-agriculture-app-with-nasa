@@ -26,7 +26,10 @@ export function FarmSatelliteHybrid({
   const selectedLayer = "true-color"
   const [zoomLevel, setZoomLevel] = useState(14)
   const [lastUpdated, setLastUpdated] = useState<string>("")
-  const gibsDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const [captureDate, setCaptureDate] = useState<string>("")
+  const [cloudCover, setCloudCover] = useState<number | null>(null)
+  const [placeLabels, setPlaceLabels] = useState(true)
+  const gibsDate = captureDate || new Date().toISOString().slice(0, 10)
 
   // Single NASA GIBS MODIS Terra true-color layer using the latest available reliable pass.
   const satelliteLayers = [
@@ -46,6 +49,14 @@ export function FarmSatelliteHybrid({
       try {
         setLoading(true)
         setError(null)
+        const metadataResponse = await fetch(`/api/satellite-metadata?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`)
+        let imageryDate = new Date().toISOString().slice(0, 10)
+        if (metadataResponse.ok) {
+          const { capture } = await metadataResponse.json()
+          imageryDate = capture?.date || imageryDate
+          setCaptureDate(capture?.date || "")
+          setCloudCover(typeof capture?.cloudCover === "number" ? capture.cloudCover : null)
+        }
 
         // Load Leaflet CSS if not already loaded
         if (!document.querySelector('link[href*="leaflet.css"]')) {
@@ -108,16 +119,26 @@ export function FarmSatelliteHybrid({
         const layer = satelliteLayers.find((l) => l.id === selectedLayer)
         if (!layer) throw new Error("Selected satellite layer not found")
 
-        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", gibsDate), {
+        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", imageryDate.replace(/-/g, "")), {
           attribution: "NASA GIBS / MODIS Terra True Color",
           maxZoom: 19,
           minZoom: 3,
           maxNativeZoom: 9,
-          opacity: 0.18,
+          opacity: 0.72,
           crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
         }).addTo(map)
+
+        if (placeLabels) {
+          window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "Place labels © OpenStreetMap contributors",
+            opacity: 0.78,
+            minZoom: 3,
+            maxZoom: 19,
+            zIndex: 500,
+          }).addTo(map)
+        }
 
         // Add field location marker
         const fieldMarker = window.L.circleMarker([latitude, longitude], {
@@ -214,7 +235,7 @@ export function FarmSatelliteHybrid({
             </div>
             <div className="flex-1">
               <CardTitle>NASA MODIS True Color Imaging</CardTitle>
-              <CardDescription>Latest available natural-color NASA MODIS pass for {fieldName}</CardDescription>
+              <CardDescription>Latest clear NASA satellite capture, zoomed to {fieldName}, with visible place names</CardDescription>
             </div>
           </div>
           <Button
@@ -237,7 +258,7 @@ export function FarmSatelliteHybrid({
             <Layers className="h-4 w-4 text-muted-foreground" />
             <p className="text-sm font-semibold text-foreground">NASA MODIS True Color</p>
           </div>
-          {lastUpdated && <span className="text-muted-foreground">Updated: {lastUpdated}</span>}
+          <span className="text-muted-foreground">{captureDate ? `Capture: ${captureDate}` : "Latest capture unavailable"}{cloudCover !== null ? ` · ${cloudCover.toFixed(0)}% cloud` : ""}</span>
         </div>
 
         {/* Map Container */}
@@ -271,7 +292,7 @@ export function FarmSatelliteHybrid({
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={() => handleZoom("in")}
-                disabled={loading || zoomLevel >= 9}
+                disabled={loading || zoomLevel >= 19}
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
