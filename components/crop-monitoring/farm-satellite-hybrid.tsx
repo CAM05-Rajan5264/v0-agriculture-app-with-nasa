@@ -78,7 +78,7 @@ export function FarmSatelliteHybrid({
         }
 
         // Initialize map after libraries are loaded
-        initializeMap()
+        initializeMap(imageryDate)
       } catch (err) {
         console.error("[v0] Error loading map libraries:", err)
         setError("Failed to load mapping library. Satellite imagery display requires internet connection.")
@@ -86,7 +86,7 @@ export function FarmSatelliteHybrid({
       }
     }
 
-    const initializeMap = () => {
+    const initializeMap = (imageryDate: string) => {
       if (!mapContainerRef.current || !window.L) {
         setError("Map container or Leaflet not available")
         setLoading(false)
