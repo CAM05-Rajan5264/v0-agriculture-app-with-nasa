@@ -24,12 +24,11 @@ export function FarmSatelliteHybrid({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const selectedLayer = "true-color"
-  const [zoomLevel, setZoomLevel] = useState(14)
+  const [zoomLevel, setZoomLevel] = useState(17)
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const [captureDate, setCaptureDate] = useState<string>("")
   const [cloudCover, setCloudCover] = useState<number | null>(null)
   const [placeLabels, setPlaceLabels] = useState(true)
-  const gibsDate = captureDate || new Date().toISOString().slice(0, 10)
 
   // Single NASA GIBS MODIS Terra true-color layer using the latest available reliable pass.
   const satelliteLayers = [
@@ -121,10 +120,10 @@ export function FarmSatelliteHybrid({
 
         const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", imageryDate.replace(/-/g, "")), {
           attribution: "NASA GIBS / MODIS Terra True Color",
-          maxZoom: 19,
+          maxZoom: 9,
           minZoom: 3,
           maxNativeZoom: 9,
-          opacity: 0.72,
+          opacity: 0.62,
           crossOrigin: "anonymous",
           subdomains: "abc",
           tms: false,
@@ -235,7 +234,7 @@ export function FarmSatelliteHybrid({
             </div>
             <div className="flex-1">
               <CardTitle>NASA MODIS True Color Imaging</CardTitle>
-              <CardDescription>Latest clear NASA satellite capture, zoomed to {fieldName}, with visible place names</CardDescription>
+              <CardDescription>Latest clear NASA capture with sharp high-zoom farm imagery and visible place names</CardDescription>
             </div>
           </div>
           <Button
@@ -256,7 +255,7 @@ export function FarmSatelliteHybrid({
         <div className="flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs">
         <div className="flex items-center gap-2">
             <Layers className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-semibold text-foreground">NASA MODIS True Color</p>
+            <p className="text-sm font-semibold text-foreground">Latest satellite + high-resolution farm view</p>
           </div>
           <span className="text-muted-foreground">{captureDate ? `Capture: ${captureDate}` : "Latest capture unavailable"}{cloudCover !== null ? ` · ${cloudCover.toFixed(0)}% cloud` : ""}</span>
         </div>
@@ -315,7 +314,7 @@ export function FarmSatelliteHybrid({
             <div className="flex items-start gap-3">
               <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">{currentLayer.name}</p>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">{currentLayer.name} through zoom 9; Esri high-resolution imagery beyond zoom 9</p>
                 <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{currentLayer.description}</p>
               </div>
             </div>
