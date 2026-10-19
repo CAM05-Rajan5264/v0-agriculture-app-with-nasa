@@ -21,6 +21,7 @@ import { SmartFarmingPanel } from "@/components/dashboard/smart-farming-panel"
 import { GlossyStatus } from "@/components/dashboard/glossy-insights"
 import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/farm-index-results"
 import { SoilMoistureTrends, type FarmSoil } from "@/components/dashboard/soil-moisture-trends"
+import { SmartTrendAnalysis } from "@/components/dashboard/smart-trend-analysis"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -119,7 +120,7 @@ export default async function DashboardPage() {
 
         {farmIndexResults.length > 0 && <FarmIndexResults farms={farmIndexResults} />}
 
-        {availableSoilMoistureFarms.length > 0 && <SoilMoistureTrends farms={availableSoilMoistureFarms} />}
+        {availableSoilMoistureFarms.length > 0 && <><SmartTrendAnalysis soilFarms={availableSoilMoistureFarms} indexFarms={farmIndexResults} /><SoilMoistureTrends farms={availableSoilMoistureFarms} /></>}
 
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
