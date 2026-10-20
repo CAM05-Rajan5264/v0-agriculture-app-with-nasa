@@ -7,6 +7,7 @@ import { CropCard } from "@/components/crops/crop-card"
 import type { Farm } from "@/lib/types"
 import { MapPin, Sprout, Satellite, Ruler } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { CropRotationPlanner } from "@/components/dashboard/crop-rotation-planner"
 
 export default async function FarmsPage() {
   const supabase = await createClient()
@@ -46,6 +47,8 @@ export default async function FarmsPage() {
             <AddFarmDialog />
           </div>
         )}
+
+        <CropRotationPlanner crops={(crops || []).map((crop) => ({ name: crop.name, farms: crop.farms ? { name: crop.farms.name } : null }))} />
 
         <div className="mb-8 mt-12 flex items-end justify-between gap-4"><div><Badge variant="secondary" className="mb-2 rounded-full">Growing portfolio</Badge><h3 className="text-2xl font-bold tracking-tight">Your crops</h3><p className="text-sm text-muted-foreground">Track active seasons and planting progress across every farm.</p></div>{farms && farms.length > 0 && <AddCropDialog farms={farms} />}</div>
         {crops && crops.length > 0 ? <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{crops.map((crop) => <CropCard key={crop.id} crop={crop} />)}</div> : <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12"><Sprout className="mb-4 size-10 text-muted-foreground" /><h3 className="mb-2 text-lg font-medium">No crops yet</h3><p className="mb-4 text-center text-muted-foreground">Add a crop to start tracking its health and phenology.</p>{farms && farms.length > 0 && <AddCropDialog farms={farms} />}</div>}
