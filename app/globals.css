@@ -103,6 +103,50 @@
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
 }
 
+.dashboard-surface {
+  position: relative;
+  isolation: isolate;
+  background-color: #eef4e8;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(181, 214, 165, 0.28), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(183, 218, 206, 0.22), transparent 25%),
+    radial-gradient(circle at 70% 92%, rgba(222, 205, 157, 0.2), transparent 26%),
+    repeating-linear-gradient(118deg, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(28deg, rgba(75, 112, 77, 0.035) 0 1px, transparent 1px 13px);
+}
+
+.dashboard-surface::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.32;
+  background-image: radial-gradient(rgba(45, 82, 53, 0.16) 0.7px, transparent 0.7px);
+  background-size: 6px 6px;
+  mix-blend-mode: multiply;
+}
+
+.dashboard-surface main {
+  background: linear-gradient(180deg, rgba(250, 252, 245, 0.18), rgba(236, 244, 231, 0.36));
+}
+
+.dashboard-surface .rounded-xl,
+.dashboard-surface .rounded-2xl {
+  box-shadow: 0 12px 30px rgba(58, 91, 61, 0.055);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-surface *,
+  .dashboard-surface *::before,
+  .dashboard-surface *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
