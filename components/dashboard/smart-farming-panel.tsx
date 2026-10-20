@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, CalendarCheck, Droplets, Leaf, Plus, ShieldAlert, Sprout, ThermometerSun } from "lucide-react"
+import { Activity, ArrowRight, CalendarCheck, Droplets, Leaf, Plus, Radio, Satellite, Sprout, ThermometerSun, Waves } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const actions = [
@@ -52,6 +52,8 @@ export function SmartFarmingPanel({ farmCount, cropCount, alertCount }: { farmCo
             {completed}/3 ready
           </div>
         </div>
+
+        <div className="remote-sensing-strip mt-6" aria-label="Remote sensing network status"><div className="remote-sensing-grid" aria-hidden="true" /><div className="remote-sensing-orbit remote-sensing-orbit--one" aria-hidden="true" /><div className="remote-sensing-orbit remote-sensing-orbit--two" aria-hidden="true" /><div className="remote-sensing-satellite" aria-hidden="true"><Satellite className="size-4" /></div><div className="remote-sensing-copy"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary"><span className="remote-sensing-ping" aria-hidden="true" /><span>Remote sensing active</span></div><p className="mt-1 text-xs text-muted-foreground">NASA observations are flowing from field, soil, and weather signals.</p></div><div className="remote-sensing-stats"><span><Activity className="size-3.5" />Live</span><span><Waves className="size-3.5" />3 signals</span><span><Radio className="size-3.5" />Synced</span></div></div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {actions.map((action) => {
