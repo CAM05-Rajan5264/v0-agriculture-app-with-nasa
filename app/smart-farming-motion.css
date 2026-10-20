@@ -1,0 +1,27 @@
+/* Smart farming remote-sensing motion layer */
+.remote-sensing-strip {
+  position: relative;
+  min-height: 104px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
+  border-radius: 1rem;
+  background: linear-gradient(105deg, color-mix(in oklab, var(--primary) 8%, transparent), color-mix(in oklab, #38bdf8 7%, transparent));
+}
+.remote-sensing-grid { position: absolute; inset: 0; opacity: .35; background-image: linear-gradient(color-mix(in oklab, var(--primary) 16%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--primary) 16%, transparent) 1px, transparent 1px); background-size: 24px 24px; mask-image: linear-gradient(90deg, transparent, black 24%, black 76%, transparent); }
+.remote-sensing-orbit { position: absolute; width: 92px; height: 92px; border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent); border-radius: 999px; animation: remote-orbit 7s linear infinite; }
+.remote-sensing-orbit--one { left: 5%; top: 6px; }
+.remote-sensing-orbit--two { left: 8%; top: 6px; width: 76px; height: 76px; border-style: dashed; animation-duration: 11s; animation-direction: reverse; }
+.remote-sensing-satellite { position: relative; z-index: 1; display: grid; width: 42px; height: 42px; place-items: center; flex: 0 0 auto; color: var(--primary); border: 1px solid color-mix(in oklab, var(--primary) 22%, transparent); border-radius: 12px; background: color-mix(in oklab, var(--background) 72%, transparent); box-shadow: 0 0 0 7px color-mix(in oklab, var(--primary) 7%, transparent); animation: remote-float 3s ease-in-out infinite; }
+.remote-sensing-ping { display: inline-block; width: 7px; height: 7px; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 0 rgb(34 197 94 / .55); animation: remote-ping 2s infinite; }
+.remote-sensing-copy { position: relative; z-index: 1; min-width: 0; }
+.remote-sensing-stats { position: relative; z-index: 1; display: flex; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; color: var(--muted-foreground); font-size: .7rem; }
+.remote-sensing-stats span { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
+@keyframes remote-orbit { from { transform: rotate(0deg) translateX(5px) rotate(0deg); } to { transform: rotate(360deg) translateX(5px) rotate(-360deg); } }
+@keyframes remote-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes remote-ping { 70%, 100% { box-shadow: 0 0 0 7px rgb(34 197 94 / 0); } }
+@media (max-width: 640px) { .remote-sensing-strip { align-items: flex-start; flex-wrap: wrap; } .remote-sensing-stats { width: 100%; margin-left: 58px; justify-content: flex-start; } }
+@media (prefers-reduced-motion: reduce) { .remote-sensing-orbit, .remote-sensing-satellite, .remote-sensing-ping { animation: none; } }
