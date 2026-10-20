@@ -83,7 +83,7 @@ export function AlertCard({ alert }: AlertCardProps) {
 
   return (
     <Card className={`border-border bg-card ${!alert.is_read ? "border-l-4 border-l-primary" : ""}`}>
-      <CardContent className="flex items-start gap-4 p-4">
+      <CardContent className="flex min-w-0 flex-wrap items-start gap-4 p-4 sm:flex-nowrap">
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${getIconColor(alert.severity)}`}
         >
@@ -95,14 +95,14 @@ export function AlertCard({ alert }: AlertCardProps) {
             <h4 className="font-medium text-foreground truncate">{alert.title}</h4>
             <Badge className={getSeverityColor(alert.severity)}>{alert.severity}</Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{alert.message}</p>
+          <p className="break-words text-sm leading-6 text-muted-foreground">{alert.message}</p>
           <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             {formatTime(alert.created_at)}
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-1">
+        <div className="ml-auto flex shrink-0 gap-1">
           {!alert.is_read && (
             <Button variant="ghost" size="icon" onClick={markAsRead} disabled={isUpdating} title="Mark as read">
               <Check className="h-4 w-4" />

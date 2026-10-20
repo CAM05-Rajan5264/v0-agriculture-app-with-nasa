@@ -27,9 +27,9 @@ export default async function AlertsPage() {
   const infoCount = alerts?.filter((a: Alert) => a.severity === "info" && !a.is_read).length || 0
 
   return (
-    <div className="flex flex-col">
+    <div className="min-h-full min-w-0 overflow-x-hidden">
       <Header title="Alerts" unreadAlerts={unreadAlerts || 0} />
-      <div className="p-6">
+      <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
         <div className="glossy-surface mb-6 overflow-hidden rounded-3xl border-white/70 p-5 md:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Badge variant="secondary" className="mb-3 rounded-full">Field watch</Badge><h2 className="text-3xl font-bold tracking-tight text-foreground">Alert Center</h2><p className="mt-1 text-muted-foreground">Prioritize crop health, weather, and operation signals from one calm workspace.</p></div><CheckAlertsButton /></div><div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"><div className="rounded-2xl bg-white/55 p-4"><ShieldCheck className="size-4 text-primary" /><p className="mt-3 text-2xl font-bold">{alerts?.length || 0}</p><p className="text-xs text-muted-foreground">Total signals</p></div><div className="rounded-2xl bg-white/55 p-4"><Activity className="size-4 text-red-500" /><p className="mt-3 text-2xl font-bold">{unreadAlerts || 0}</p><p className="text-xs text-muted-foreground">Needs review</p></div><div className="rounded-2xl bg-white/55 p-4"><Clock3 className="size-4 text-amber-600" /><p className="mt-3 text-2xl font-bold">{warningCount}</p><p className="text-xs text-muted-foreground">Warnings</p></div><div className="rounded-2xl bg-white/55 p-4"><CheckCircle className="size-4 text-emerald-600" /><p className="mt-3 text-2xl font-bold">{readList.length}</p><p className="text-xs text-muted-foreground">Resolved</p></div></div></div>
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-border bg-card">
