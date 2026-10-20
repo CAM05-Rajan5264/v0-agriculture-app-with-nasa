@@ -149,8 +149,7 @@ export default async function AlertsPage() {
                 </div>
                 <div className="mt-4 border-t border-border pt-4">
                   <p className="text-xs text-muted-foreground">
-                    Alerts check for: frost warnings, drought conditions, heat stress, heavy rainfall, crop health
-                    decline, irrigation needs, harvest reminders, and growth stage transitions.
+                    Alerts check for: temperature shifts, rainfall pattern changes, water shortages, extreme weather, declining satellite vegetation health, crop health, irrigation needs, harvest reminders, and growth stage transitions.
                   </p>
                 </div>
               </CardContent>

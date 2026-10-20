@@ -1,5 +1,5 @@
 import type { Farm, Crop, Alert } from "./types"
-import { getWeatherData, calculateNDVI, analyzeCropHealth, getIrrigationStatus, getWeatherForecast } from "./nasa-api"
+import { getWeatherData, calculateNDVI, analyzeCropHealth, getIrrigationStatus, getWeatherForecast, getWeatherHistory, getSoilMoistureTrends } from "./nasa-api"
 import { CROP_GUIDES } from "./crop-guide"
 
 export interface AlertTrigger {
@@ -222,6 +222,40 @@ export async function checkForAlerts(
 
     const forecastAlerts = await checkForecastDisasters(farm)
     alerts.push(...forecastAlerts)
+
+    try {
+      const [weatherHistory, soilTrend] = await Promise.all([
+        getWeatherHistory(farm.latitude, farm.longitude, 14),
+        getSoilMoistureTrends(farm.latitude, farm.longitude),
+      ])
+      const recentWeather = weatherHistory.slice(-7)
+      const previousWeather = weatherHistory.slice(0, 7)
+      const recentRain = recentWeather.reduce((sum, day) => sum + day.precipitation, 0)
+      const previousRain = previousWeather.reduce((sum, day) => sum + day.precipitation, 0)
+      const recentTemp = recentWeather.reduce((sum, day) => sum + day.temperature, 0) / Math.max(recentWeather.length, 1)
+      const previousTemp = previousWeather.reduce((sum, day) => sum + day.temperature, 0) / Math.max(previousWeather.length, 1)
+
+      if (recentWeather.length >= 7 && Math.abs(recentTemp - previousTemp) >= 4) {
+        alerts.push({ type: "weather", severity: "warning", title: "Temperature Pattern Shift", message: `${farm.name} is averaging ${Math.abs(recentTemp - previousTemp).toFixed(1)}°C ${recentTemp > previousTemp ? "warmer" : "cooler"} than the previous week. Review crop stress and protection plans.`, farmId: farm.id })
+      }
+      if (recentWeather.length >= 7 && ((recentRain < 5 && previousRain >= 10) || (recentRain > previousRain * 2 && recentRain > 25))) {
+        alerts.push({ type: recentRain < 5 ? "drought" : "weather", severity: recentRain < 5 ? "warning" : "info", title: recentRain < 5 ? "Rainfall Pattern Drying" : "Rainfall Pattern Intensifying", message: `${farm.name} recorded ${recentRain.toFixed(1)}mm this week versus ${previousRain.toFixed(1)}mm last week. Adjust irrigation or drainage planning.`, farmId: farm.id })
+      }
+      const recentSoil = soilTrend.filter((point) => point.kind === "historical").slice(-7)
+      const latestSoil = recentSoil.at(-1)?.value
+      const weekAgoSoil = recentSoil[0]?.value
+      if (latestSoil !== undefined && latestSoil < 30) {
+        alerts.push({ type: "irrigation", severity: latestSoil < 20 ? "critical" : "warning", title: "Water Shortage Risk", message: `NASA root-zone moisture at ${farm.name} is ${latestSoil.toFixed(0)}%. Prioritize irrigation and inspect for leaks or uneven distribution.`, farmId: farm.id })
+      } else if (latestSoil !== undefined && weekAgoSoil !== undefined && latestSoil - weekAgoSoil < -12) {
+        alerts.push({ type: "drought", severity: "warning", title: "Soil Moisture Declining", message: `Root-zone moisture at ${farm.name} has fallen ${Math.abs(latestSoil - weekAgoSoil).toFixed(0)} points in seven days. Schedule a soil check before crop stress increases.`, farmId: farm.id })
+      }
+      const ndvi = await calculateNDVI(farm.latitude, farm.longitude, "")
+      if (ndvi !== null && ndvi < 0.35) {
+        alerts.push({ type: "crop_health", severity: "warning", title: "Declining Soil and Vegetation Health", message: `Satellite vegetation health near ${farm.name} is low (NDVI ${ndvi.toFixed(2)}). Test soil nutrients, inspect fields, and review ground cover.`, farmId: farm.id })
+      }
+    } catch (error) {
+      console.error("[v0] Error checking trend alerts:", error)
+    }
   }
 
   for (const crop of crops) {
