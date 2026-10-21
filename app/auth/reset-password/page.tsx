@@ -294,8 +294,8 @@ export default function ResetPasswordPage() {
             <div className="flex items-center justify-center gap-3 pt-4">
               <div className="relative">
                 <Image
-                  src="/images/profile-20pic.jpg"
-                  alt="Developer"
+                  src="/images/developer-portrait.jpeg"
+                  alt="Rajan Kumar Singh, FarmPulse developer"
                   width={36}
                   height={36}
                   className="rounded-full ring-2 ring-primary/20"
