@@ -149,7 +149,7 @@ export default function DeveloperPage() {
               <div className="relative">
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary to-primary/50 opacity-75 blur" />
                 <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-background">
-                  <img src="/images/profile-20pic.jpg" alt="Developer Profile" className="h-full w-full object-cover" />
+                  <img src="/images/developer-portrait.jpeg" alt="Rajan Kumar Singh, FarmPulse developer" className="h-full w-full object-cover object-top" />
                 </div>
               </div>
               <h3 className="mt-4 text-xl font-semibold text-foreground">FarmPulse Developer</h3>

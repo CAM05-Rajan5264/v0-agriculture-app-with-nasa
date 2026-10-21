@@ -206,7 +206,7 @@ export default function HomePage() {
             <FarmPulseLogo size="sm" />
             <div className="flex items-center gap-4">
               <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202026-06-26%20at%2019.31.52-WTCTl04t4W2CtbtBCVz7PDghI3j8QE.jpeg"
+                src="/images/developer-portrait.jpeg"
                 alt="Rajan Kumar Singh"
                 className="h-14 w-14 rounded-full border-2 border-primary/20 object-cover object-top shadow-sm"
               />
