@@ -53,12 +53,12 @@ export function StatsGrid({ farmCount, cropCount, alertCount, healthyPercentage 
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat) => (
-        <Card key={stat.label} className="group relative overflow-hidden border-white/70 bg-white/70 shadow-[0_12px_35px_oklch(0.45_0.08_160_/_0.10)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-[0_18px_45px_oklch(0.45_0.08_160_/_0.16)]">
+      {stats.map((stat, index) => (
+        <Card key={stat.label} style={{ animationDelay: `${index * 90}ms` }} className="dashboard-stat-card group relative overflow-hidden border-white/70 bg-white/70 shadow-[0_12px_35px_oklch(0.45_0.08_160_/_0.10)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-[0_18px_45px_oklch(0.45_0.08_160_/_0.16)]">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white" />
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-3">
-              <div className={`flex size-11 items-center justify-center rounded-2xl ${stat.bgColor} shadow-inner`}>
+              <div className={`dashboard-stat-icon flex size-11 items-center justify-center rounded-2xl ${stat.bgColor} shadow-inner`}>
                 <stat.icon className={`size-5 ${stat.color}`} />
               </div>
               <TrendingUp className="size-4 text-primary/60" aria-hidden="true" />
@@ -69,7 +69,7 @@ export function StatsGrid({ farmCount, cropCount, alertCount, healthyPercentage 
                 <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">{stat.value}</p>
               </div>
               <div className="flex h-10 items-end gap-1" aria-label={`${stat.label} trend`}>
-                {stat.trend.map((height, index) => <span key={`${stat.label}-${index}`} className="w-1.5 rounded-full bg-primary/25 transition-all group-hover:bg-primary/50" style={{ height: `${Math.max(8, height / 2)}px` }} />)}
+                {stat.trend.map((height, index) => <span key={`${stat.label}-${index}`} className="dashboard-stat-bar w-1.5 rounded-full bg-primary/25 transition-all group-hover:bg-primary/50" style={{ height: `${Math.max(8, height / 2)}px` }} />)}
               </div>
             </div>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-primary/10">
