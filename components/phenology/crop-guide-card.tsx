@@ -16,6 +16,7 @@ import {
   XCircle,
 } from "lucide-react"
 import type { CropGuide } from "@/lib/crop-guide"
+import { CropImage } from "@/components/ui/crop-image"
 
 interface CropGuideCardProps {
   guide: CropGuide
@@ -38,7 +39,8 @@ export function CropGuideCard({ guide }: CropGuideCardProps) {
   }
 
   return (
-    <Card className="border-border bg-card">
+    <Card className="overflow-hidden border-border bg-card">
+      <div className="relative h-32 overflow-hidden"><CropImage cropName={guide.name} className="h-full w-full" /><div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" /><span className="absolute bottom-3 left-4 rounded-full bg-white/85 px-2.5 py-1 text-xs font-semibold capitalize text-emerald-900">{guide.name} crop</span></div>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
