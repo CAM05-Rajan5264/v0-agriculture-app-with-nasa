@@ -22,6 +22,7 @@ import { GlossyStatus } from "@/components/dashboard/glossy-insights"
 import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/farm-index-results"
 import { SoilMoistureTrends, type FarmSoil } from "@/components/dashboard/soil-moisture-trends"
 import { SmartTrendAnalysis } from "@/components/dashboard/smart-trend-analysis"
+import { FarmActionCenter, type FarmActionSignal } from "@/components/dashboard/farm-action-center"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -82,6 +83,15 @@ export default async function DashboardPage() {
     }
   }))
 
+  const actionSignals: FarmActionSignal[] = []
+  const driestFarm = soilMoistureFarms.filter((farm) => farm.points.length > 0).sort((a, b) => (a.points.at(-1)?.rootZoneSoilMoisture ?? 100) - (b.points.at(-1)?.rootZoneSoilMoisture ?? 100))[0]
+  const driestMoisture = driestFarm?.points.at(-1)?.rootZoneSoilMoisture
+  if (driestFarm && driestMoisture !== undefined && driestMoisture < 35) actionSignals.push({ id: "water", title: `Inspect ${driestFarm.farmName} moisture`, detail: `Root-zone moisture is ${driestMoisture.toFixed(0)}%. Review irrigation before crop stress increases.`, href: "/dashboard/irrigation", icon: "water", priority: driestMoisture < 20 ? "high" : "medium" })
+  const stressedFarm = farmIndexResults.find((farm) => farm.ndvi !== null && farm.ndvi < 0.45)
+  if (stressedFarm) actionSignals.push({ id: "crop-health", title: `Scout ${stressedFarm.name}`, detail: `Satellite vegetation health is below the preferred baseline. Check canopy, nutrients, and pests.`, href: "/dashboard/crop-monitoring", icon: "crop", priority: "high" })
+  if ((unreadAlerts || 0) > 0) actionSignals.push({ id: "alerts", title: "Review active alerts", detail: `${unreadAlerts} unread field signal${unreadAlerts === 1 ? "" : "s"} need attention from your team.`, href: "/dashboard/alerts", icon: "weather", priority: "high" })
+  if (primaryCrop) actionSignals.push({ id: "rotation", title: "Explore the next rotation", detail: `Compare water, soil, and climate fit for ${primaryCrop.name} before the next planting window.`, href: "/dashboard/farms", icon: "soil", priority: "low" })
+
   let healthyPercentage = 0
   if (crops && crops.length > 0) {
     let healthyCount = 0
@@ -121,6 +131,8 @@ export default async function DashboardPage() {
         {farmIndexResults.length > 0 && <FarmIndexResults farms={farmIndexResults} />}
 
         {availableSoilMoistureFarms.length > 0 && <><SmartTrendAnalysis soilFarms={availableSoilMoistureFarms} indexFarms={farmIndexResults} /><SoilMoistureTrends farms={availableSoilMoistureFarms} /></>}
+
+        <FarmActionCenter signals={actionSignals} />
 
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
