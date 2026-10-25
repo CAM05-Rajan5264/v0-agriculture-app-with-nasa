@@ -23,6 +23,7 @@ import { FarmIndexResults, type FarmIndexResult } from "@/components/dashboard/f
 import { SoilMoistureTrends, type FarmSoil } from "@/components/dashboard/soil-moisture-trends"
 import { SmartTrendAnalysis } from "@/components/dashboard/smart-trend-analysis"
 import { FarmActionCenter, type FarmActionSignal } from "@/components/dashboard/farm-action-center"
+import { IndiaMarketBoard } from "@/components/dashboard/india-market-board"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -133,6 +134,7 @@ export default async function DashboardPage() {
         {availableSoilMoistureFarms.length > 0 && <><SmartTrendAnalysis soilFarms={availableSoilMoistureFarms} indexFarms={farmIndexResults} /><SoilMoistureTrends farms={availableSoilMoistureFarms} /></>}
 
         <FarmActionCenter signals={actionSignals} />
+        <IndiaMarketBoard />
 
         <SmartFarmingPanel farmCount={farmCount} cropCount={cropCount} alertCount={unreadAlerts || 0} />
 
