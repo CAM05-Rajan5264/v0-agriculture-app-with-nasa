@@ -1,6 +1,12 @@
 import Link from "next/link"
-import { ArrowUpRight, BarChart3, ExternalLink, TrendingDown, TrendingUp } from "lucide-react"
+import { BarChart3, ExternalLink, FileBarChart, TrendingDown, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+const reportLinks = [
+  { label: "Daily arrivals & prices", href: "https://agmarknet.gov.in/SearchCmmMkt.aspx" },
+  { label: "Commodity-wise report", href: "https://agmarknet.gov.in/PriceAndArrivals/CommodityWiseDailyReport.aspx" },
+  { label: "Monthly price trends", href: "https://agmarknet.gov.in/PriceAndArrivals/SA_Pri_Month.aspx" },
+]
 
 const marketPrices = [
   { crop: "Wheat", mandi: "Indore, MP", price: "₹2,425", unit: "/quintal", change: "+2.1%", direction: "up" },
@@ -39,7 +45,7 @@ export function IndiaMarketBoard() {
             )
           })}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground"><span>Reference values; verify quality, grade, and local mandi bids before selling.</span><Link href="https://agmarknet.gov.in/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-emerald-800 hover:underline">Verify on AGMARKNET <ExternalLink className="size-3" /></Link></div>
+        <div className="border-t border-border/60 bg-emerald-950/[0.02] px-4 py-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground"><FileBarChart className="size-4 text-emerald-800" /> Official AGMARKNET reports</div><div className="grid gap-2 sm:grid-cols-3">{reportLinks.map((report) => <Link key={report.href} href={report.href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-2 rounded-lg border border-emerald-900/10 bg-background/70 px-3 py-2 text-xs font-medium text-emerald-900 transition-colors hover:bg-emerald-50"><span>{report.label}</span><ExternalLink className="size-3 shrink-0" /></Link>)}</div><div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"><span>Reference values; verify quality, grade, and local mandi bids before selling.</span><Link href="https://agmarknet.gov.in/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-emerald-800 hover:underline">Open AGMARKNET <ExternalLink className="size-3" /></Link></div></div>
       </CardContent>
     </Card>
   )
