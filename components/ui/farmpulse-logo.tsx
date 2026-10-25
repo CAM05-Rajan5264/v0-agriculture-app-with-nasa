@@ -29,10 +29,11 @@ export function FarmPulseLogo({ className, size = "md", showText = true }: FarmP
             strokeLinejoin="round"
             className="h-[55%] w-[55%] text-primary-foreground"
           >
-            {/* Heartbeat line */}
-            <path d="M3 12h4l2-4 4 8 2-4h6" />
-            {/* Small leaf accent */}
-            <path d="M17 8c0-2-1.5-3-3-3s-3 1-3 3" strokeWidth="2" />
+            {/* Crop rows and rising leaf */}
+            <path d="M3 16c4-3 7-3 11-1s7 2 11-1" />
+            <path d="M3 20c4-2 8-2 12-1s7 1 10-1" />
+            <path d="M12 16c-1-5 1-9 6-12 1 5-1 9-6 12Z" fill="currentColor" stroke="none" />
+            <path d="M12 16c2-4 4-8 6-12" strokeWidth="1.5" />
           </svg>
         </div>
       </div>
