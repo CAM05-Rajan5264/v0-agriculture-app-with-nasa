@@ -9,12 +9,14 @@ const cropImages: Record<string, { src: string; alt: string }> = {
   cotton: { src: "/images/crops/cotton-cutout.png", alt: "Cotton branch with white bolls" },
   chickpea: { src: "/images/crops/pulses-cutout.png", alt: "Chickpea plant with pods" },
   pulse: { src: "/images/crops/pulses-cutout.png", alt: "Pulse plant with pods" },
-  soybean: { src: "/images/crops/pulses-cutout.png", alt: "Soybean plant" },
-  mustard: { src: "/images/crops/pulses-cutout.png", alt: "Mustard crop plant" },
+  soybean: { src: "/images/crops/soybean-cutout.png", alt: "Soybean plant with pods" },
+  mustard: { src: "/images/crops/mustard-cutout.png", alt: "Mustard plant with yellow flowers" },
+  groundnut: { src: "/images/crops/groundnut-cutout.png", alt: "Groundnut plant with peanuts" },
+  turmeric: { src: "/images/crops/turmeric-cutout.png", alt: "Fresh turmeric rhizomes" },
   vegetable: { src: "/images/crops/vegetables-cutout.png", alt: "Vegetable plants" },
   tomato: { src: "/images/crops/vegetables-cutout.png", alt: "Tomato plant with red fruit" },
-  onion: { src: "/images/crops/vegetables-cutout.png", alt: "Vegetable crop plant" },
-  potato: { src: "/images/crops/vegetables-cutout.png", alt: "Vegetable crop plant" },
+  onion: { src: "/images/crops/onion-cutout.png", alt: "Red onion bulb with leaves" },
+  potato: { src: "/images/crops/potato-cutout.png", alt: "Potatoes with plant leaves" },
 }
 
 export function getCropImage(cropName: string) {
