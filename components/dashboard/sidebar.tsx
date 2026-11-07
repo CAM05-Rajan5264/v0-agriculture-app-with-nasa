@@ -32,6 +32,7 @@ const navigation = [
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
 
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
+  { name: "VR Field Room", href: "/dashboard/vr-room", icon: Code },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
 ]
 
