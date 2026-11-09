@@ -32,7 +32,7 @@ const navigation = [
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
-  { name: "Golden Farm Game", href: "/dashboard/game", icon: Gamepad2 },
+  { name: "Farm Learning Game", href: "/dashboard/game", icon: Gamepad2 },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Developer", href: "/dashboard/developer", icon: Code },
 ]

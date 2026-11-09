@@ -31,7 +31,7 @@ const navigation = [
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
   { name: "Activities", href: "/dashboard/activities", icon: Activity },
   { name: "Field School", href: "/dashboard/field-school", icon: GraduationCap },
-  { name: "Golden Farm Game", href: "/dashboard/game", icon: Gamepad2 },
+  { name: "Farm Learning Game", href: "/dashboard/game", icon: Gamepad2 },
 
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "VR Field Room", href: "/dashboard/vr-room", icon: Code },
