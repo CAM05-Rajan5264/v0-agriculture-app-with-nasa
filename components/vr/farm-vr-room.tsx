@@ -9,24 +9,26 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const featureLinks = [
-  { title: "My Farms", subtitle: "Fields & locations", href: "/dashboard/farms", color: "#78b96a", position: [-4.4, 2.1, -2] as [number, number, number] },
-  { title: "Crop Monitoring", subtitle: "Satellite health", href: "/dashboard/crop-monitoring", color: "#e2ad55", position: [-1.5, 2.1, -2] as [number, number, number] },
-  { title: "Weather", subtitle: "NASA observations", href: "/dashboard/weather", color: "#6eb6d4", position: [1.5, 2.1, -2] as [number, number, number] },
-  { title: "Irrigation", subtitle: "Water planning", href: "/dashboard/irrigation", color: "#5e9ed1", position: [4.4, 2.1, -2] as [number, number, number] },
-  { title: "Phenology", subtitle: "Crop calendar", href: "/dashboard/phenology", color: "#d78982", position: [-2.8, -0.4, -2] as [number, number, number] },
-  { title: "Alerts", subtitle: "Field signals", href: "/dashboard/alerts", color: "#e07c57", position: [0, -0.4, -2] as [number, number, number] },
-  { title: "Field School", subtitle: "Learn & grow", href: "/dashboard/field-school", color: "#af9bda", position: [2.8, -0.4, -2] as [number, number, number] },
+  { title: "My Farms", subtitle: "Fields & locations", metric: "4 active fields", href: "/dashboard/farms", color: "#78b96a", position: [-4.4, 2.1, -2] as [number, number, number] },
+  { title: "Crop Monitoring", subtitle: "Satellite health", metric: "NDVI layers", href: "/dashboard/crop-monitoring", color: "#e2ad55", position: [-1.5, 2.1, -2] as [number, number, number] },
+  { title: "Weather", subtitle: "NASA observations", metric: "Live conditions", href: "/dashboard/weather", color: "#6eb6d4", position: [1.5, 2.1, -2] as [number, number, number] },
+  { title: "Irrigation", subtitle: "Water planning", metric: "Next best action", href: "/dashboard/irrigation", color: "#5e9ed1", position: [4.4, 2.1, -2] as [number, number, number] },
+  { title: "Phenology", subtitle: "Crop calendar", metric: "Growth stages", href: "/dashboard/phenology", color: "#d78982", position: [-2.8, -0.4, -2] as [number, number, number] },
+  { title: "Alerts", subtitle: "Field signals", metric: "Priority signals", href: "/dashboard/alerts", color: "#e07c57", position: [0, -0.4, -2] as [number, number, number] },
+  { title: "Field School", subtitle: "Learn & grow", metric: "Practical guidance", href: "/dashboard/field-school", color: "#af9bda", position: [2.8, -0.4, -2] as [number, number, number] },
 ]
 
 function LinkPanel({ feature, onSelect }: { feature: typeof featureLinks[number]; onSelect: (feature: typeof featureLinks[number]) => void }) {
   const ref = useRef<Group>(null)
-  useFrame(({ clock }) => { if (ref.current) ref.current.position.y = feature.position[1] + Math.sin(clock.elapsedTime * 1.4 + feature.position[0]) * 0.045 })
-  return <group ref={ref} position={feature.position} onClick={(event) => { event.stopPropagation(); onSelect(feature) }}>
+  const [hovered, setHovered] = useState(false)
+  useFrame(({ clock }) => { if (ref.current) { ref.current.position.y = feature.position[1] + Math.sin(clock.elapsedTime * 1.4 + feature.position[0]) * 0.045; ref.current.scale.lerp(hovered ? 1.06 : 1, 0.12) } })
+  return <group ref={ref} position={feature.position} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} onClick={(event) => { event.stopPropagation(); onSelect(feature) }}>
     <mesh><boxGeometry args={[2.25, 1.35, 0.12]} /><meshStandardMaterial color="#f8f4e8" roughness={0.72} /></mesh>
     <mesh position={[0, 0.46, 0.08]}><boxGeometry args={[2.25, 0.08, 0.03]} /><meshStandardMaterial color={feature.color} /></mesh>
     <Text position={[0, 0.12, 0.1]} fontSize={0.19} color="#294b35" anchorX="center" anchorY="middle" maxWidth={2}>{feature.title}</Text>
     <Text position={[0, -0.18, 0.1]} fontSize={0.11} color="#607267" anchorX="center" anchorY="middle" maxWidth={2}>{feature.subtitle}</Text>
-    <Text position={[0, -0.46, 0.1]} fontSize={0.1} color={feature.color} anchorX="center" anchorY="middle">OPEN FEATURE →</Text>
+    <Text position={[0, -0.36, 0.1]} fontSize={0.095} color="#294b35" anchorX="center" anchorY="middle" maxWidth={2}>{feature.metric}</Text>
+    <Text position={[0, -0.56, 0.1]} fontSize={0.1} color={feature.color} anchorX="center" anchorY="middle">CLICK TO EXPLORE</Text>
     <mesh position={[0, 0, -0.08]}><boxGeometry args={[2.45, 1.55, 0.04]} /><meshStandardMaterial color={feature.color} transparent opacity={0.12} /></mesh>
   </group>
 }
@@ -42,6 +44,10 @@ function Room({ onSelect }: { onSelect: (feature: typeof featureLinks[number]) =
     <mesh position={[7.4, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[7, 14]} /><meshStandardMaterial color="#d2e2ce" roughness={1} /></mesh>
     <Text position={[0, 3.55, -3.25]} fontSize={0.45} color="#294b35" anchorX="center">FARMPULSE FIELD ROOM</Text>
     <Text position={[0, 3.05, -3.25]} fontSize={0.16} color="#607267" anchorX="center">Explore your farm intelligence workspace</Text>
+    <mesh position={[0, -1.85, -1.25]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[5.8, 2.2]} /><meshStandardMaterial color="#78a95e" roughness={1} /></mesh>
+    {[-2.1, -1.05, 0, 1.05, 2.1].map((x) => <mesh key={x} position={[x, -1.65, -1.25]} rotation={[0, 0, -0.18]}><boxGeometry args={[0.12, 0.6, 0.12]} /><meshStandardMaterial color="#3d713f" /></mesh>)}
+    <mesh position={[0, 0.65, -1.1]}><sphereGeometry args={[0.42, 24, 16]} /><meshStandardMaterial color="#91c5de" emissive="#315d70" emissiveIntensity={0.25} transparent opacity={0.85} /></mesh>
+    <Text position={[0, 0.08, -1.05]} fontSize={0.12} color="#294b35" anchorX="center">LIVE FIELD SIGNALS</Text>
     {featureLinks.map((feature) => <LinkPanel key={feature.href} feature={feature} onSelect={onSelect} />)}
     <Sparkles count={90} scale={[14, 6, 4]} size={2} speed={0.2} color="#dfeebf" />
   </>
