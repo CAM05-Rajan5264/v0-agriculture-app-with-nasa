@@ -23,18 +23,19 @@ export function FarmSatelliteHybrid({
   const mapRef = useRef<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedLayer, setSelectedLayer] = useState("true-color")
   const [zoomLevel, setZoomLevel] = useState(17)
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const [captureDate, setCaptureDate] = useState<string>("")
   const [cloudCover, setCloudCover] = useState<number | null>(null)
   const [placeLabels, setPlaceLabels] = useState(true)
 
-  const satelliteLayers = [
-    { id: "true-color", name: "Natural color", description: "True-color NASA MODIS Terra imagery for field context.", tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg", attribution: "NASA GIBS / MODIS Terra True Color" },
-    { id: "ndvi", name: "Crop health (NDVI)", description: "NASA vegetation index layer for crop vigor and stress patterns.", tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Vegetation_Indices_16Day_NDVI/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg", attribution: "NASA GIBS / MODIS NDVI" },
-    { id: "moisture", name: "Water stress", description: "NASA land-surface temperature layer to help identify water-stressed areas.", tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Land_Surface_Temperature_Day/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg", attribution: "NASA GIBS / MODIS Land Surface Temperature" },
-  ]
+  const satelliteLayer = {
+    id: "true-color",
+    name: "Hybrid natural color",
+    description: "Natural-color satellite imagery overlaid on the high-resolution farm basemap.",
+    tileUrl: "https://gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/__GIBS_DATE__/GoogleMapsCompatible_Level9/9/{y}/{x}.jpg",
+    attribution: "NASA GIBS / MODIS Terra True Color",
+  }
 
   useEffect(() => {
     if (!mapContainerRef.current) return
@@ -104,17 +105,14 @@ export function FarmSatelliteHybrid({
         })
 
         const clearFarmBase = window.L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-          attribution: "Esri World Imagery; NASA MODIS overlay",
+          attribution: "Esri World Imagery",
           minZoom: 3,
           maxZoom: 19,
           maxNativeZoom: 18,
         }).addTo(map)
 
-        const layer = satelliteLayers.find((l) => l.id === selectedLayer)
-        if (!layer) throw new Error("Selected satellite layer not found")
-
-        const satelliteLayer = window.L.tileLayer(layer.tileUrl.replace("__GIBS_DATE__", imageryDate.replace(/-/g, "")), {
-          attribution: layer.attribution,
+        const naturalColorLayer = window.L.tileLayer(satelliteLayer.tileUrl.replace("__GIBS_DATE__", imageryDate.replace(/-/g, "")), {
+          attribution: satelliteLayer.attribution,
           maxZoom: 9,
           minZoom: 3,
           maxNativeZoom: 9,
@@ -206,7 +204,7 @@ export function FarmSatelliteHybrid({
     }
 
     loadMapLibraries()
-  }, [latitude, longitude, fieldName, cropName, selectedLayer])
+  }, [latitude, longitude, fieldName, cropName])
 
   const navigateToFarm = async () => {
     setLoading(true)
@@ -232,7 +230,7 @@ export function FarmSatelliteHybrid({
     }
   }
 
-  const currentLayer = satelliteLayers.find((l) => l.id === selectedLayer)
+
 
   return (
     <Card className="border-border bg-card w-full">
@@ -261,8 +259,6 @@ export function FarmSatelliteHybrid({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="Satellite imagery layers">{satelliteLayers.map((layer) => <Button key={layer.id} type="button" variant={selectedLayer === layer.id ? "default" : "outline"} size="sm" onClick={() => setSelectedLayer(layer.id)} disabled={loading} className="justify-start gap-2"><Layers className="h-4 w-4" />{layer.name}</Button>)}</div>
-
         {/* Status Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted p-2.5 text-xs">
         <div className="flex items-center gap-2">
@@ -320,14 +316,13 @@ export function FarmSatelliteHybrid({
           )}
         </div>
 
-        {/* Layer Information */}
-        {currentLayer && !error && (
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-3">
+        {!error && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
             <div className="flex items-start gap-3">
-              <Layers className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <Layers className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">{currentLayer.name} through zoom 9; Esri high-resolution imagery beyond zoom 9</p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">{currentLayer.description}</p>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Hybrid natural color imagery</p>
+                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">NASA MODIS true color is combined with Esri high-resolution imagery for field-level context.</p>
               </div>
             </div>
           </div>
