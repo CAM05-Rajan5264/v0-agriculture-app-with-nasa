@@ -21,12 +21,14 @@ import {
   Menu,
   Leaf,
   GraduationCap,
+  BrainCircuit,
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Farms", href: "/dashboard/farms", icon: MapPin },
   { name: "Crop Monitoring", href: "/dashboard/crop-monitoring", icon: Leaf },
+  { name: "Crop Intelligence", href: "/dashboard/crop-intelligence", icon: BrainCircuit },
   { name: "Weather", href: "/dashboard/weather", icon: Cloud },
   { name: "Irrigation", href: "/dashboard/irrigation", icon: Droplets },
   { name: "Phenology", href: "/dashboard/phenology", icon: TrendingUp },
