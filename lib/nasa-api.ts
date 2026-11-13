@@ -106,6 +106,44 @@ function getDateRange(daysBack: number): { start: string; end: string } {
   }
 }
 
+export interface NASARecentObservation {
+  date: string
+  temperatureC: number | null
+  precipitationMm: number | null
+  relativeHumidityPct: number | null
+  windSpeedMps: number | null
+  solarRadiation: number | null
+}
+
+export async function getRecentNASAObservation(latitude: number, longitude: number): Promise<NASARecentObservation | null> {
+  const { start, end } = getDateRange(7)
+  const data = await fetchNASAPowerData({
+    parameters: "T2M,RH2M,PRECTOTCORR,WS2M,ALLSKY_SFC_SW_DWN",
+    community: "AG",
+    longitude,
+    latitude,
+    start,
+    end,
+    format: "JSON",
+  })
+  const parameters = data?.properties?.parameter
+  const dates = Object.keys(parameters?.T2M ?? {}).filter((date) => parameters?.T2M?.[date] !== -999).sort().reverse()
+  const date = dates[0]
+  if (!date || !parameters) return null
+  const readValue = (name: string) => {
+    const value = parameters[name]?.[date]
+    return typeof value === "number" && Number.isFinite(value) && value !== -999 ? value : null
+  }
+  return {
+    date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`,
+    temperatureC: readValue("T2M"),
+    relativeHumidityPct: readValue("RH2M"),
+    precipitationMm: readValue("PRECTOTCORR"),
+    windSpeedMps: readValue("WS2M"),
+    solarRadiation: readValue("ALLSKY_SFC_SW_DWN"),
+  }
+}
+
 export async function getWeatherData(latitude: number, longitude: number): Promise<NASAWeatherData> {
   const { start, end } = getDateRange(7)
 
