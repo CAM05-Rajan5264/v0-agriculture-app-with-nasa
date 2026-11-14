@@ -100,7 +100,7 @@ export default function HomePage() {
                 </div>
                 <iframe
                   title="FarmPulse Smart Farming video"
-                  src="https://video.pictory.ai/embed/20261113134407166a23a32fde17848fa813e9af84288432c/20261114084840907E8fpBwZrCrbcbUM"
+                  src="https://video.pictory.ai/embed/20261113134407166a23a32fde17848fa813e9af84288432c/20261114084840907E8fpBwZrCrbcbUM?mode=player&autoplay=1&loop=1&muted=1"
                   className="farmpulse-demo-video__frame"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
