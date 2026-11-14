@@ -177,14 +177,14 @@ export default function DeveloperPage() {
 
               <div className="w-full space-y-2 text-left">
                 <a
-                  href="mailto:developer@farmpulse.app"
+                  href="mailto:rajansingh5264@gmail.com"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <Mail className="h-4 w-4" />
                   Contact Developer
                 </a>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/CAM05-Rajan5264/v0-agriculture-app-with-nasa"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -193,7 +193,7 @@ export default function DeveloperPage() {
                   GitHub Profile
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/in/rajan-kumar-singh-a2360321"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
