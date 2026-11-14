@@ -96,13 +96,15 @@ export default function HomePage() {
 
               <div className="farmpulse-demo-video mt-10 mb-10">
                 <div className="farmpulse-demo-video__header">
-                  <span>30-second product demo</span>
-                  <span aria-hidden="true">Auto-playing preview</span>
+                  <span>FarmPulse smart farming video</span>
                 </div>
                 <iframe
-                  title="30-second FarmPulse demo"
-                  src="/demo?embed=1"
+                  title="FarmPulse Smart Farming video"
+                  src="https://video.pictory.ai/embed/20261113134407166a23a32fde17848fa813e9af84288432c/20261114084840907E8fpBwZrCrbcbUM"
                   className="farmpulse-demo-video__frame"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
                   loading="eager"
                 />
               </div>
